@@ -127,6 +127,12 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+wandb/
+Data/Measurements/*/*.svg
+Data/Measurements/*/
+ModelFitting/CNN_Reg/
+BCLab/
+BCLab-Uncertainty/
 
 # Spyder project settings
 .spyderproject

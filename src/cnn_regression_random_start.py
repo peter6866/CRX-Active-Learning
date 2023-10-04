@@ -46,13 +46,14 @@ def main(seed, output_dir):
     train_df, test_df, validate_df = loaders.train_test_split(activity_df, "cnn")
     batches_to_use = [
         "Genomic",
-        "CrxMotifMutant",
-        "Round2",
-        "Round3a",
-        "Round3b",
-        "Round4b",
+        # "CrxMotifMutant",
+        # "Round2",
+        # "Round3a",
+        # "Round3b",
+        # "Round4b",
     ]
     train_df = train_df[train_df["data_batch_name"].isin(batches_to_use)]
+    validate_df = validate_df[validate_df["data_batch_name"].isin(batches_to_use)]
     # Also pull out the genomic sequences in the validation set as another evaluation criteria
     validate_genomic_df = validate_df[validate_df["original_genomic"]]
     logger.info(f"Number of sequences available for training: {len(train_df)}")
@@ -182,6 +183,7 @@ def main(seed, output_dir):
         truth = truth.flatten()
         preds = modeling.cnn_predict_batches(trainer.model, data, use_cuda=True)
         preds = preds.flatten()
+        print(truth[0])
         np.save(os.path.join(output_dir, f"{name}_labels.npy"), truth)
         np.save(os.path.join(output_dir, f"{name}_predictions.npy"), preds)
 

@@ -32,7 +32,7 @@ def one_hot_encode(seqs):
 
 class UncertaintyDataset(Dataset):
     
-    def __init__(self, data_path, retinopathy_path, data_type):
+    def __init__(self, data_path, retinopathy_path, data_type, sample_type=None):
         """
         Initialize the ActivityDataset.
 
@@ -69,9 +69,23 @@ class UncertaintyDataset(Dataset):
             raise ValueError(f"Invalid data_type provided: {data_type}")
 
         sequences = data_df[sequence_key]
-        self.target = torch.tensor(data_df[activity_key].values, dtype=torch.float)
+        
 
-        self.seqs_hot = one_hot_encode(sequences)
+        if sample_type is not None:
+            if sample_type == "random":
+                sample_df = pd.read_csv("Data/Sampling_Test/random_sample.csv")
+            elif sample_type == "uncertainty":
+                sample_df = pd.read_csv("Data/Sampling_Test/largest_samples.csv")
+            
+            full_seqs = pd.concat([sequences, sample_df["sequence"]], ignore_index=True)
+            full_target = pd.concat([data_df[activity_key], sample_df["expression_log2"]], ignore_index=True)
+
+            self.seqs_hot = one_hot_encode(full_seqs)
+            self.target = torch.tensor(full_target.values, dtype=torch.float)
+
+        else:
+            self.seqs_hot = one_hot_encode(sequences)
+            self.target = torch.tensor(data_df[activity_key].values, dtype=torch.float)
         
     def __len__(self):
         return len(self.target)

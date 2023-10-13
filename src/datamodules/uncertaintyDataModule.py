@@ -4,7 +4,7 @@ from .uncertaintyDataset import UncertaintyDataset
 
 
 class UncertaintyDataModule(pl.LightningDataModule):
-    def __init__(self, data_path, retinopathy_path, validate_type, batch_size, pred_type="train"):
+    def __init__(self, data_path, retinopathy_path, validate_type, batch_size, pred_type="train", sample_type=None):
         super(UncertaintyDataModule, self).__init__()
         self.data_path = data_path
         self.retinopathy_path = retinopathy_path
@@ -12,11 +12,11 @@ class UncertaintyDataModule(pl.LightningDataModule):
         self.validate_type = validate_type
         self.pred_type = pred_type
         # Create datasets
-        self.train_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "train")
-        self.validate_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "validate")
-        self.validate_genomic_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "validate_genomic")
-        self.test_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test")
-        self.test_retinopathy_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test_retinopathy")
+        self.train_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "train", sample_type=sample_type)
+        self.validate_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "validate", sample_type=sample_type)
+        self.validate_genomic_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "validate_genomic", sample_type=sample_type)
+        self.test_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test", sample_type=sample_type)
+        self.test_retinopathy_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test_retinopathy", sample_type=sample_type)
 
     def setup(self, stage=None):
         pass

@@ -67,16 +67,11 @@ class PeftRegressionModel(pl.LightningModule):
     def test_step(self, batch, batch_idx, dataloader_idx):
         outputs = self.model(**batch)
         pred = outputs.logits.squeeze()
-        pcc = self.test_pcc(pred, batch["labels"])
-        #scc = self.test_scc(outputs.logits.squeeze(), batch["labels"])
+      
         if dataloader_idx == 0:
-            self.log('test_retinopathy_pcc', pcc, on_epoch=True)
-            #self.log('test_retinopathy_scc', scc, on_epoch=True)
             self.retinopathy_preds.append(pred.detach().cpu().numpy())
             self.retinopathy_truth.append(batch["labels"].detach().cpu().numpy())
         else:
-            self.log('test_set_pcc', pcc, on_epoch=True)
-            #self.log('test_set_scc', scc, on_epoch=True)
             self.test_preds.append(pred.detach().cpu().numpy())
             self.test_truth.append(batch["labels"].detach().cpu().numpy())
 

@@ -65,13 +65,13 @@ data_module = ActivityDataModule(
      validate_type=TESTING_ON,
      batch_size=BATCH_SIZE)
 
-val_data_module = ActivityDataModule(
-     data_path=data_dir,
-     retinopathy_path=retino_dir,
-     tokenizer=tokenizer, 
-     validate_type=TESTING_ON,
-     batch_size=BATCH_SIZE,
-     pred_type="val")
+# val_data_module = ActivityDataModule(
+#      data_path=data_dir,
+#      retinopathy_path=retino_dir,
+#      tokenizer=tokenizer, 
+#      validate_type=TESTING_ON,
+#      batch_size=BATCH_SIZE,
+#      pred_type="val")
 
 lora_config = LoraConfig(
     task_type="SEQ_CLS",

@@ -20,7 +20,7 @@ from models.peftRegressionModel import PeftRegressionModel
 
 
 BATCH_SIZE = 64
-MAX_EPOCHS = 80
+MAX_EPOCHS = 100
 LEARNING_RATE = 5e-3
 TRAINING_ON = "Round4b"
 # Import the tokenizer and the model
@@ -28,7 +28,7 @@ pretrained_model_name = "InstaDeepAI/nucleotide-transformer-2.5b-multi-species"
 # TODO: FIXIT
 # pretrained_model_name = "zhihan1996/DNABERT-2-117M"
 tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name)
-model_O = AutoModelForSequenceClassification.from_pretrained(pretrained_model_name, num_labels=1, hidden_dropout_prob=0.3)
+model_O = AutoModelForSequenceClassification.from_pretrained(pretrained_model_name, num_labels=1, hidden_dropout_prob=0.4)
 
 data_dir = "Data/activity_summary_stats_and_metadata.txt"
 retino_dir = "Data/retinopathy_reformatted.txt"

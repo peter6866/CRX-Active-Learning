@@ -133,6 +133,7 @@ Data/Measurements/*/
 ModelFitting/CNN_Reg/
 BCLab/
 BCLab-Uncertainty/
+log/
 
 # Spyder project settings
 .spyderproject

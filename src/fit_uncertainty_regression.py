@@ -18,8 +18,9 @@ from models.enhancerUncertaintyModel import EnhancerUncertaintyModel
 SEQ_SIZE = 164
 LR = 0.0003
 BATCH_SIZE = 32
-MAX_EPOCHS = 50
+MAX_EPOCHS = 30
 TRAINING_ON = "Genomic"
+SAMPLE_TYPE = "uncertainty"
 
 data_dir = "Data/activity_summary_stats_and_metadata.txt"
 retino_dir = "Data/retinopathy_reformatted.txt"
@@ -48,7 +49,9 @@ data_module = UncertaintyDataModule(
      data_path=data_dir,
      retinopathy_path=retino_dir,
      validate_type=TRAINING_ON,
-     batch_size=BATCH_SIZE)
+     batch_size=BATCH_SIZE,
+     sample_type=SAMPLE_TYPE
+     )
 
 model = EnhancerUncertaintyModel(
     sequence_length=SEQ_SIZE,

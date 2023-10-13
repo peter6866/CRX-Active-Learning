@@ -19,7 +19,8 @@ LR = 1e-4
 BATCH_SIZE = 64
 MAX_EPOCHS = 1
 TESTING_ON = "Genomic"
-CHECKPOINT_DIR = "BCLab-Uncertainty/mv655rq3/checkpoints/epoch=49-step=6550.ckpt"
+CHECKPOINT_DIR = "/scratch/bclab/jiayu/CRX-Active-Learning/BCLab-Uncertainty/ttbuhwod/checkpoints/epoch=29-step=3360.ckpt"
+SAMPLE_TYPE = "uncertainty"
 
 data_dir = "Data/activity_summary_stats_and_metadata.txt"
 retino_dir = "Data/retinopathy_reformatted.txt"
@@ -27,17 +28,7 @@ output_dir = "/scratch/bclab/jiayu/CRX-Active-Learning/ModelFitting/uncertainty"
 
 pl.seed_everything(7)
 
-wandb.login()
-
-wandb_logger = WandbLogger(
-    project='BCLab-Uncertainty',
-    name=time.strftime('%Y-%m-%d-%H-%M'),
-    group=TESTING_ON,
-    job_type="test"
-    )
-
 trainer = pl.Trainer(
-    logger=wandb_logger,
     accelerator='gpu',
     devices=-1,
     max_epochs=MAX_EPOCHS,
@@ -49,14 +40,14 @@ data_module = UncertaintyDataModule(
      data_path=data_dir,
      retinopathy_path=retino_dir,
      validate_type=TESTING_ON,
-     batch_size=BATCH_SIZE)
+     batch_size=BATCH_SIZE
+     )
 
 model = EnhancerUncertaintyModel.load_from_checkpoint(
     CHECKPOINT_DIR,
     sequence_length=SEQ_SIZE,
-    learning_rate=LR
+    learning_rate=LR,
+    sample_type=SAMPLE_TYPE
 )
 
 trainer.test(model, data_module)
-
-wandb.finish()

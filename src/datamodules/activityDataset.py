@@ -31,11 +31,11 @@ class ActivityDataset(Dataset):
         
         batches_to_use = [
             "Genomic",
-            # "CrxMotifMutant",
-            # "Round2",
-            # "Round3a",
-            # "Round3b",
-            # "Round4b",
+            "CrxMotifMutant",
+            "Round2",
+            "Round3a",
+            "Round3b",
+            "Round4b",
         ]
         
         if data_type == "train":

@@ -18,10 +18,11 @@ _LOG_2PI = math.log(2 * math.pi)
 
 
 class EnhancerUncertaintyModel(pl.LightningModule):
-    def __init__(self, sequence_length, learning_rate):
+    def __init__(self, sequence_length, learning_rate, sample_type=None):
         super().__init__()
         self.sequence_length = sequence_length
         self.learning_rate = learning_rate
+        self.sample_type = sample_type
 
         conv_dropout = 0.1
         resid_dropout = 0.25
@@ -30,7 +31,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         # [input_filters, output_filters, filter_size, activation, dilation_layers, pool_size]
         architecture = [
             [4, 256, 10, "exp", 4, 4],   # 164 --> 41
-            [256, 256, 6, "relu", 3, 4],    # 41 --> 11
+            [256, 256, 6, "relu", 3, 4], # 41 -->11
             [256, 64, 3, "relu", 2, 3],   # 11 --> 4
         ]
 
@@ -84,6 +85,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         self.retinopathy_pcc = 0.0
         self.retinopathy_scc = 0.0
         self.count = 0
+   
         self.save_dir = "/scratch/bclab/jiayu/CRX-Active-Learning/ModelFitting/uncertainty"
 
     def forward(self, x):
@@ -159,8 +161,6 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         scc = self.test_scc(mean.squeeze(), target)
 
         if dataloader_idx == 0:
-            self.log('test_retinopathy_pcc', pcc)
-            self.log('test_retinopathy_scc', scc)
             self.mean_values.append(mean.detach().cpu().numpy())
             self.std_values.append(torch.exp(std).detach().cpu().numpy())
 
@@ -168,8 +168,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
             self.retinopathy_scc += scc.detach().item()
             self.count += 1
         else:
-            self.log('test_set_pcc', pcc)
-            self.log('test_set_scc', scc)
+            pass
 
     def on_test_end(self):
         means = np.concatenate(self.mean_values)
@@ -230,7 +229,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         # Make the plot tight layout
         plt.tight_layout()
         
-        file_path = os.path.join(self.save_dir, "mean_vs_std_plot_on_retinopathy.png")
+        file_path = os.path.join(self.save_dir, f"mean_vs_std_plot_on_retinopathy_{self.sample_type}.png")
         plt.savefig(file_path, bbox_inches='tight')
         plt.close() 
 

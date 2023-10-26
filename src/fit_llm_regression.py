@@ -20,7 +20,7 @@ from models.peftRegressionModel import PeftRegressionModel
 
 
 BATCH_SIZE = 64
-MAX_EPOCHS = 100
+MAX_EPOCHS = 3
 LEARNING_RATE = 5e-3
 TRAINING_ON = "Round4b"
 # Import the tokenizer and the model

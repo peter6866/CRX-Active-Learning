@@ -9,11 +9,8 @@
 #SBATCH -e log/cnn_multiclass_cross_validation.err
 #SBATCH --mail-type=BEGIN,END,FAIL
 
-eval $(spack load --sh miniconda3)
-source activate active-learning
-
 dirname=ModelFitting/CNN_Clf
 mkdir -p $dirname/Round3bFull
 
-python3 src/cnn_multiclass_cross_validation.py $dirname
+# python3 src/cnn_multiclass_cross_validation.py $dirname
 python3 src/cnn_multiclass_cross_validation.py $dirname/Round3bFull --nfolds 1 --modeling_splits Data/round_3b_only.txt --report_train

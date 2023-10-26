@@ -45,6 +45,7 @@ class EnhancerModel(nn.Module):
         self.n_filters = n_filters
         self.n_fc = n_fc
         self.dropout_c = dropout_c
+        self.batches = 4
         
         self.conv_net = nn.Sequential(
             nn.Conv1d(4, self.n_filters, kernel_size=self.conv_kernel_size,
@@ -73,22 +74,42 @@ class EnhancerModel(nn.Module):
         with torch.no_grad():
             clf_input_size = self.conv_net.forward(torch.zeros(1, 4, self.sequence_length)).view(1, -1).shape[1]
             
-            
-        self.classifier = nn.Sequential(
-            nn.Linear(clf_input_size, self.n_fc), 
+        self.latent = nn.Sequential(
+            nn.Linear(clf_input_size, self.n_fc),
             nn.BatchNorm1d(self.n_fc),
-            nn.LeakyReLU(inplace=True),
-            nn.Dropout(p=dropout_c),
-            nn.Linear(self.n_fc, self.n_targets), 
-            nn.LogSoftmax(dim=1)
+            nn.GELU(),
+            nn.Dropout(p=0.2)
         )
+
+        self.original_path = nn.Linear(self.n_fc, self.n_targets)
+
+        self.batch_effect_path = nn.Sequential(
+            nn.Linear(self.n_fc, self.batches),
+            nn.Linear(self.batches, self.n_targets),
+        )
+
+        self.classifier_head = nn.LogSoftmax(dim=1)
+            
+        # self.classifier = nn.Sequential(
+        #     nn.Linear(clf_input_size, self.n_fc), 
+        #     nn.BatchNorm1d(self.n_fc),
+        #     nn.LeakyReLU(inplace=True),
+        #     nn.Dropout(p=dropout_c),
+        #     nn.Linear(self.n_fc, self.n_targets), 
+        #     nn.LogSoftmax(dim=1)
+        # )
         
     def forward(self, x):
         """Forward propagation of a batch.
         """
         out = self.conv_net(x)
         reshape_out = out.view(out.shape[0], -1) 
-        predict = self.classifier(reshape_out)
+        # predict = self.classifier(reshape_out)
+        latent = self.latent(reshape_out)
+        original_path = self.original_path(latent)
+        batch_effect_path = self.batch_effect_path(latent)
+        predict = self.classifier_head(original_path + batch_effect_path)
+
         return predict
 
 
@@ -133,4 +154,5 @@ def get_optimizer(lr):
     """
     The optimizer and the parameters for initialization. Optimizer will be initialized by Selene after model initialization.
     """
-    return torch.optim.SGD, {"lr": lr, "momentum": 0.9, "weight_decay": 1e-6}
+    # return torch.optim.SGD, {"lr": lr, "momentum": 0.9, "weight_decay": 1e-6}
+    return torch.optim.Adam, {"lr": lr, "weight_decay": 1e-6}

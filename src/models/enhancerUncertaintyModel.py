@@ -13,7 +13,6 @@ import os
 import matplotlib.pyplot as plt
 
 
-
 _LOG_2PI = math.log(2 * math.pi)
 
 
@@ -85,6 +84,12 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         self.retinopathy_pcc = 0.0
         self.retinopathy_scc = 0.0
         self.count = 0
+
+        self.muta_mean_values = []
+        self.muta_std_values = []
+        self.muta_pcc = 0.0
+        self.muta_scc = 0.0
+        self.muta_count = 0
    
         self.save_dir = "/scratch/bclab/jiayu/CRX-Active-Learning/ModelFitting/uncertainty"
 
@@ -168,7 +173,12 @@ class EnhancerUncertaintyModel(pl.LightningModule):
             self.retinopathy_scc += scc.detach().item()
             self.count += 1
         else:
-            pass
+            self.muta_mean_values.append(mean.detach().cpu().numpy())
+            self.muta_std_values.append(torch.exp(std).detach().cpu().numpy())
+
+            self.muta_pcc += pcc.detach().item()
+            self.muta_scc += scc.detach().item()
+            self.muta_count += 1
 
     def on_test_end(self):
         means = np.concatenate(self.mean_values)
@@ -176,6 +186,9 @@ class EnhancerUncertaintyModel(pl.LightningModule):
 
         mean_pcc = self.retinopathy_pcc / self.count
         mean_scc = self.retinopathy_scc / self.count
+
+        muta_mean_pcc = self.muta_pcc / self.muta_count
+        muta_mean_scc = self.muta_scc / self.muta_count
 
         # Create a new figure with a specified size and DPI
         plt.figure(figsize=(10, 6), dpi=200)
@@ -219,6 +232,15 @@ class EnhancerUncertaintyModel(pl.LightningModule):
 
         plt.annotate(f"SCC = {mean_scc:.4f}", 
                     xy=(0.05, 0.85), 
+                    xycoords='axes fraction',
+                    fontsize=14,
+                    fontweight='bold',
+                    ha="left",
+                    va="bottom",
+                    bbox=dict(boxstyle="round,pad=0.3", edgecolor="#ffffff", facecolor="#e1e1e1"))
+        
+        plt.annotate(f"Muta: PCC = {muta_mean_pcc:.4f} SCC = {muta_mean_scc:.4f}", 
+                    xy=(0.05, 0.77), 
                     xycoords='axes fraction',
                     fontsize=14,
                     fontweight='bold',

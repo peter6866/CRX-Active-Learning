@@ -73,7 +73,8 @@ class UncertaintyDataset(Dataset):
 
         if sample_type is not None:
             if sample_type == "random":
-                sample_df = pd.read_csv("Data/Sampling_Test/random_sample.csv")
+                sample_df = pd.read_csv("Data/Sampling_Test/all_samples.csv").sample(n=8000)
+                # sample_df = pd.read_csv("Data/Sampling_Test/random_sample.csv")
             elif sample_type == "uncertainty":
                 sample_df = pd.read_csv("Data/Sampling_Test/largest_samples.csv")
             

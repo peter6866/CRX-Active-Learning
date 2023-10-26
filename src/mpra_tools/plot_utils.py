@@ -57,7 +57,7 @@ def set_print_params():
 def set_manuscript_params():
     """Set the matplotlib rcParams to values for manuscript-quality figures. Adapted from the BPNet manuscript https://github.com/kundajelab/bpnet-manuscript/blob/master/basepair/plot/config.py#L31"""
     plt.rcdefaults()
-    plt.style.use("seaborn-paper")
+    # plt.style.use("seaborn-paper")
     
     paper_style = {
         "font.family": "sans-serif",

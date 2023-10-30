@@ -135,7 +135,7 @@ ModelFitting/CNN_Clf/
 BCLab/
 BCLab-Uncertainty/
 log/
-src/lightning_logs
+lightning_logs/
 
 # Spyder project settings
 .spyderproject

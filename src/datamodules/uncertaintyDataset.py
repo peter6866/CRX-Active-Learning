@@ -73,11 +73,16 @@ class UncertaintyDataset(Dataset):
 
         if sample_type is not None:
             if sample_type == "random":
-                sample_df = pd.read_csv("Data/Sampling_Test/all_samples.csv").sample(n=8000)
-                # sample_df = pd.read_csv("Data/Sampling_Test/random_sample.csv")
+                sample_df = pd.read_csv("Data/Sampling_Test/all_samples_round2.csv")
+                round1_df = pd.read_csv("Data/Sampling_Test/all_samples.csv")
+                sample_df = pd.concat([sample_df, round1_df], ignore_index=True).sample(n=15000)
             elif sample_type == "uncertainty":
-                sample_df = pd.read_csv("Data/Sampling_Test/largest_samples.csv")
-            
+                sample_df = pd.read_csv("Data/Sampling_Test/largest_samples_round2.csv")
+                round1_df = pd.read_csv("Data/Sampling_Test/largest_samples.csv")
+                sample_df = pd.concat([sample_df, round1_df], ignore_index=True)
+            elif sample_type == "bin_uncertainty":
+                sample_df = pd.read_csv("Data/Sampling_Test/largest_bin_samples.csv")
+
             full_seqs = pd.concat([sequences, sample_df["sequence"]], ignore_index=True)
             full_target = pd.concat([data_df[activity_key], sample_df["expression_log2"]], ignore_index=True)
 

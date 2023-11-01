@@ -11,6 +11,7 @@ import numpy as np
 from selene_sdk.utils import load_model_from_state_dict
 import os
 import matplotlib.pyplot as plt
+from mpra_tools import plot_utils
 
 
 _LOG_2PI = math.log(2 * math.pi)
@@ -90,6 +91,10 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         self.muta_pcc = 0.0
         self.muta_scc = 0.0
         self.muta_count = 0
+
+        # Predicted vs. observed
+        self.retinopathy_truth = []
+        self.muta_truth = []
    
         self.save_dir = "/scratch/bclab/jiayu/CRX-Active-Learning/ModelFitting/uncertainty"
 
@@ -140,7 +145,8 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         return beta_nll_loss
     
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        # optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=0.01)
         return optimizer
     
     def validation_step(self, batch, batch_idx):
@@ -168,6 +174,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         if dataloader_idx == 0:
             self.mean_values.append(mean.detach().cpu().numpy())
             self.std_values.append(torch.exp(std).detach().cpu().numpy())
+            self.retinopathy_truth.append(target.detach().cpu().numpy())
 
             self.retinopathy_pcc += pcc.detach().item()
             self.retinopathy_scc += scc.detach().item()
@@ -175,6 +182,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         else:
             self.muta_mean_values.append(mean.detach().cpu().numpy())
             self.muta_std_values.append(torch.exp(std).detach().cpu().numpy())
+            self.muta_truth.append(target.detach().cpu().numpy())
 
             self.muta_pcc += pcc.detach().item()
             self.muta_scc += scc.detach().item()
@@ -183,6 +191,38 @@ class EnhancerUncertaintyModel(pl.LightningModule):
     def on_test_end(self):
         means = np.concatenate(self.mean_values)
         stds = np.concatenate(self.std_values)
+
+        preds = {
+            "retinopathy": means,
+            "muta": np.concatenate(self.muta_mean_values)
+        }
+
+        truth = {
+            "retinopathy": np.concatenate(self.retinopathy_truth),
+            "muta": np.concatenate(self.muta_truth)
+        }
+
+        for name in ["retinopathy", "muta"]:
+        
+            fig, ax = plt.subplots(figsize=plot_utils.get_figsize())
+            fig, ax, corrs = plot_utils.scatter_with_corr(
+                truth[name],
+                preds[name],
+                "Observed",
+                "Predicted",
+                colors="density",
+                loc="upper left",
+                figax=(fig, ax),
+                rasterize=True,
+            )
+            # Show y = x
+            xlim = ax.get_xlim()
+            ylim = ax.get_ylim()
+            vmin = max(xlim[0], ylim[0])
+            vmax = min(xlim[1], ylim[1])
+            ax.plot([vmin, vmax], [vmin, vmax], color="k", linestyle="--", lw=1)
+            plot_utils.save_fig(fig, os.path.join(self.save_dir, f"{name}PredVsObs"))
+            plt.close()
 
         mean_pcc = self.retinopathy_pcc / self.count
         mean_scc = self.retinopathy_scc / self.count

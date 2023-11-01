@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --mem=32G
-#SBATCH --cpus-per-task=2
+#SBATCH --cpus-per-task=4
 #SBATCH -p gpu
 #SBATCH --gpus=1
 #SBATCH -o log/jupyterFromCluster-log-%A.txt

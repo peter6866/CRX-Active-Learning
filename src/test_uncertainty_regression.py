@@ -19,8 +19,8 @@ LR = 1e-4
 BATCH_SIZE = 64
 MAX_EPOCHS = 1
 TESTING_ON = "Genomic"
-CHECKPOINT_DIR = "/scratch/bclab/jiayu/CRX-Active-Learning/BCLab-Uncertainty/8i9ny2vd/checkpoints/epoch=49-step=29950.ckpt"
-SAMPLE_TYPE = "random"
+CHECKPOINT_DIR = "/scratch/bclab/jiayu/CRX-Active-Learning/BCLab-Uncertainty/mzlbxd1w/checkpoints/epoch=49-step=19050.ckpt"
+SAMPLE_TYPE = "bin_uncertainty"
 
 data_dir = "Data/activity_summary_stats_and_metadata.txt"
 retino_dir = "Data/retinopathy_reformatted.txt"

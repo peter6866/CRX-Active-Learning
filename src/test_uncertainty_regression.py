@@ -1,9 +1,3 @@
-import time
-import os
-
-import torch
-import numpy as np
-
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 
@@ -19,12 +13,12 @@ LR = 1e-4
 BATCH_SIZE = 64
 MAX_EPOCHS = 1
 TESTING_ON = "Genomic"
-CHECKPOINT_DIR = "/scratch/bclab/jiayu/CRX-Active-Learning/BCLab-Uncertainty/mzlbxd1w/checkpoints/epoch=49-step=19050.ckpt"
+CHECKPOINT_DIR = "BCLab-Uncertainty/mzlbxd1w/checkpoints/epoch=49-step=19050.ckpt"
 SAMPLE_TYPE = "bin_uncertainty"
 
 data_dir = "Data/activity_summary_stats_and_metadata.txt"
 retino_dir = "Data/retinopathy_reformatted.txt"
-output_dir = "/scratch/bclab/jiayu/CRX-Active-Learning/ModelFitting/uncertainty"
+output_dir = "ModelFitting/uncertainty"
 
 pl.seed_everything(7)
 

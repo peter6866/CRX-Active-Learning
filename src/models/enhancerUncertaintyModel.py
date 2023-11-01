@@ -96,7 +96,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         self.retinopathy_truth = []
         self.muta_truth = []
    
-        self.save_dir = "/scratch/bclab/jiayu/CRX-Active-Learning/ModelFitting/uncertainty"
+        self.save_dir = "ModelFitting/uncertainty"
 
     def forward(self, x):
 

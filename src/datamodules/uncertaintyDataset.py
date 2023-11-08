@@ -48,11 +48,11 @@ class UncertaintyDataset(Dataset):
         
         batches_to_use = [
             "Genomic",
-            # "CrxMotifMutant",
-            # "Round2",
-            # "Round3a",
-            # "Round3b",
-            # "Round4b",
+            "CrxMotifMutant",
+            "Round2",
+            "Round3a",
+            "Round3b",
+            "Round4b",
         ]
         
         if data_type == "train":
@@ -84,6 +84,8 @@ class UncertaintyDataset(Dataset):
                 sample_df = pd.read_csv("Data/Sampling_Test/largest_bin_samples_round2.csv")
                 round1_df = pd.read_csv("Data/Sampling_Test/largest_bin_samples.csv")
                 sample_df = pd.concat([sample_df, round1_df], ignore_index=True)
+            elif sample_type == "distance_uncertainty":
+                sample_df = pd.read_csv("Data/Sampling_Test/largest_samples_distance.csv")
 
             full_seqs = pd.concat([sequences, sample_df["sequence"]], ignore_index=True)
             full_target = pd.concat([data_df[activity_key], sample_df["expression_log2"]], ignore_index=True)

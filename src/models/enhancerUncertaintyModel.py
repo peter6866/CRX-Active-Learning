@@ -18,12 +18,11 @@ _LOG_2PI = math.log(2 * math.pi)
 
 
 class EnhancerUncertaintyModel(pl.LightningModule):
-    def __init__(self, sequence_length, learning_rate, data_batches=None, sample_type=None):
+    def __init__(self, sequence_length, learning_rate, sample_type=None):
         super().__init__()
         self.sequence_length = sequence_length
         self.learning_rate = learning_rate
         self.sample_type = sample_type
-        self.data_batches = data_batches
 
         conv_dropout = 0.1
         resid_dropout = 0.25
@@ -67,16 +66,9 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         # Dropout
         layers.append(nn.Dropout(p=fc_dropout))
 
-        # Add linear layer of 32 neurons
-        layers.append(nn.Linear(fc_neurons, 32))
-        layers.append(nn.BatchNorm1d(32))
-        layers.append(nn.GELU())
-        layers.append(nn.Dropout(p=0.2))
-
         self.conv_net = nn.Sequential(*layers)
         # Output mean and standard deviation
-        # self.output = nn.Linear(fc_neurons, 2)
-        self.output = nn.Linear(32, 2)
+        self.output = nn.Linear(fc_neurons, 2)
 
         # Regression Metrics
         self.train_pcc = torchmetrics.PearsonCorrCoef()

@@ -48,11 +48,11 @@ class UncertaintyDataset(Dataset):
         
         batches_to_use = [
             "Genomic",
-            "CrxMotifMutant",
-            "Round2",
-            "Round3a",
-            "Round3b",
-            "Round4b",
+            # "CrxMotifMutant",
+            # "Round2",
+            # "Round3a",
+            # "Round3b",
+            # "Round4b",
         ]
         
         if data_type == "train":
@@ -70,7 +70,6 @@ class UncertaintyDataset(Dataset):
 
         sequences = data_df[sequence_key]
         
-
         if sample_type is not None:
             if sample_type == "random":
                 sample_df = pd.read_csv("Data/Sampling_Test/all_samples_round2.csv")
@@ -103,5 +102,5 @@ class UncertaintyDataset(Dataset):
     def __getitem__(self, idx):
         x = self.seqs_hot[idx]
         y = self.target[idx]
-
+        
         return x, y

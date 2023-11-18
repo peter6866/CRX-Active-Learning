@@ -16,17 +16,19 @@ class ResBlock(nn.Module):
         
         self.conv_block1 = nn.Sequential(
             nn.Conv1d(num_channels, num_channels, kernel_size=5, stride=1, padding='same'),
-            # nn.BatchNorm1d(num_channels),
+            # nn.InstanceNorm1d(num_channels),
+            # nn.LeakyReLU(0.2)
             nn.ReLU()
         )
         
         self.conv_block2 = nn.Sequential(
             nn.Conv1d(num_channels, num_channels, kernel_size=5, stride=1, padding='same'),
-            # nn.BatchNorm1d(num_channels),
+            # nn.InstanceNorm1d(num_channels),
+            # nn.LeakyReLU(0.2)
             nn.ReLU()
         )
 
-        self.init_weights()
+        # self.init_weights()
 
     def init_weights(self):
         for m in self.modules():
@@ -85,7 +87,7 @@ class Critic(nn.Module):
         # Final linear layer for scoring
         self.fc = nn.Linear(seq_len * num_channels, 1)
         
-        self.init_weights()
+        # self.init_weights()
         
     def init_weights(self):
         for m in self.modules():
@@ -134,7 +136,7 @@ class WGAN(L.LightningModule):
             latent_dim=latent_dim, 
             num_channels=100, 
             seq_len=seq_len, 
-            res_rate=0.3, 
+            res_rate=0.5, 
             vocab_size=vocab_size
         )
         
@@ -142,7 +144,7 @@ class WGAN(L.LightningModule):
             num_channels=100, 
             seq_len=seq_len, 
             vocab_size=vocab_size, 
-            res_rate=0.3
+            res_rate=0.5
         )
         
     def forward(self, z):
@@ -151,14 +153,17 @@ class WGAN(L.LightningModule):
     def configure_optimizers(self):
         lr = self.lr
         
-        opt_gen = torch.optim.Adam(self.generator.parameters(), lr=lr, betas=(0.0, 0.9))
-        opt_critic = torch.optim.Adam(self.critic.parameters(), lr=lr, betas=(0.0, 0.9))
+        opt_gen = torch.optim.Adam(self.generator.parameters(), lr=lr, betas=(0.5, 0.9))
+        opt_critic = torch.optim.Adam(self.critic.parameters(), lr=lr, betas=(0.5, 0.9))
         
         return [opt_gen, opt_critic], []
     
     def gradient_penalty(self, real, fake):
+        real = real.requires_grad_()
+        fake = fake.requires_grad_()
+        
         BATCH_SIZE, C, L = real.shape
-        alpha = torch.rand((BATCH_SIZE, 1, 1))
+        alpha = torch.rand((BATCH_SIZE, 1, 1)).to("cuda")
         interp = real * alpha + fake * (1 - alpha)
         
         interp_score = self.critic(interp)
@@ -185,7 +190,7 @@ class WGAN(L.LightningModule):
         # Train Critic: max E[critic(real)] - E[critic(fake)]
         self.toggle_optimizer(opt_c)
         for _ in range(self.critic_iterations):
-            noise = torch.randn(cur_batch_size, self.latent_dim)
+            noise = torch.randn(cur_batch_size, self.latent_dim).to("cuda")
             fake = self(noise)
             critic_real = self.critic(real).reshape(-1)
             critic_fake = self.critic(fake).reshape(-1)

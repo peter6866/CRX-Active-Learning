@@ -36,8 +36,17 @@ class ganDataset(Dataset):
     def __init__(self, data_path):
         sequence_key = "sequence"
         activity_df = load_data(data_path)
+
+        batches_to_use = [
+            "Genomic",
+            # "CrxMotifMutant",
+            # "Round2",
+            # "Round3a",
+            # "Round3b",
+            # "Round4b",
+        ]
         
-        data_df = activity_df[activity_df["cnn_train"] & activity_df["data_batch_name"].isin(["Genomic", "CrxMotifMutant", "Round2",])]
+        data_df = activity_df[activity_df["cnn_train"] & activity_df["data_batch_name"].isin(batches_to_use)]
         self.sequences = data_df[sequence_key]
         
         self.seqs_hot = one_hot_encode(self.sequences)

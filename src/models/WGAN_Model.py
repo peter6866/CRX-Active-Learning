@@ -5,6 +5,7 @@ import pytorch_lightning as L
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import wandb
 
 
 # Construct residual block
@@ -28,7 +29,45 @@ class ResBlock(nn.Module):
             nn.ReLU()
         )
 
-        # self.init_weights()
+        self.init_weights()
+
+    def init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv1d):
+                nn.init.uniform_(m.weight, 
+                                 -torch.sqrt(torch.tensor(3.)) * torch.sqrt(4. / torch.tensor(5 * self.num_channels + 5 * self.num_channels)), 
+                                 torch.sqrt(torch.tensor(3.)) * torch.sqrt(4. / torch.tensor(5 * self.num_channels + 5 * self.num_channels)))
+                nn.init.constant_(m.bias, 0)
+
+    def forward(self, x):
+        res = self.conv_block1(x)
+        res = self.conv_block2(res)
+
+        return x + self.res_rate * res
+    
+    
+# Construct residual block for critic
+class ResBlockCritic(nn.Module):
+    def __init__(self, num_channels, res_rate=0.3):
+        super(ResBlockCritic, self).__init__()
+        self.num_channels = num_channels
+        self.res_rate = res_rate
+        
+        self.conv_block1 = nn.Sequential(
+            nn.Conv1d(num_channels, num_channels, kernel_size=5, stride=1, padding='same'),
+            nn.InstanceNorm1d(num_channels),
+            nn.LeakyReLU(0.1)
+            # nn.ReLU()
+        )
+        
+        self.conv_block2 = nn.Sequential(
+            nn.Conv1d(num_channels, num_channels, kernel_size=5, stride=1, padding='same'),
+            nn.InstanceNorm1d(num_channels),
+            nn.LeakyReLU(0.1)
+            # nn.ReLU()
+        )
+
+        self.init_weights()
 
     def init_weights(self):
         for m in self.modules():
@@ -54,6 +93,13 @@ class Generator(nn.Module):
         
         # Linear layer to transform the latent vector
         self.linear = nn.Linear(latent_dim, seq_len * num_channels)
+        # self.linear = nn.Sequential(
+        #     nn.Linear(latent_dim, 256),
+        #     nn.ReLU(),
+        #     nn.Linear(256, seq_len * num_channels),
+        # )
+
+        # self.batch_norm = nn.BatchNorm1d(num_channels)
         
         self.res_blocks = nn.ModuleList([ResBlock(num_channels, res_rate) for _ in range(res_layers)])
         
@@ -82,12 +128,12 @@ class Critic(nn.Module):
         self.conv1 = nn.Conv1d(vocab_size, num_channels, kernel_size=1, stride=1, padding='same')
 
         # Residual blocks
-        self.res_blocks = nn.ModuleList([ResBlock(num_channels, res_rate) for _ in range(res_layers)])
+        self.res_blocks = nn.ModuleList([ResBlockCritic(num_channels, res_rate) for _ in range(res_layers)])
 
         # Final linear layer for scoring
         self.fc = nn.Linear(seq_len * num_channels, 1)
         
-        # self.init_weights()
+        self.init_weights()
         
     def init_weights(self):
         for m in self.modules():
@@ -118,9 +164,9 @@ class WGAN(L.LightningModule):
     def __init__(
         self,
         seq_len,
+        lr,
         vocab_size = 4,
         latent_dim = 100,
-        lr = 1e-4,
         lambda_gp = 10,
         critic_iterations = 5,
     ):
@@ -130,13 +176,15 @@ class WGAN(L.LightningModule):
         self.critic_iterations = critic_iterations
         self.latent_dim = latent_dim
         self.lambda_gp = lambda_gp
+        self.vocab_size = vocab_size
+        self.seq_len = seq_len
         
         # Initialize networks
         self.generator = Generator(
             latent_dim=latent_dim, 
             num_channels=100, 
             seq_len=seq_len, 
-            res_rate=0.5, 
+            res_rate=0.3, 
             vocab_size=vocab_size
         )
         
@@ -144,7 +192,7 @@ class WGAN(L.LightningModule):
             num_channels=100, 
             seq_len=seq_len, 
             vocab_size=vocab_size, 
-            res_rate=0.5
+            res_rate=0.3
         )
         
     def forward(self, z):
@@ -156,7 +204,7 @@ class WGAN(L.LightningModule):
         opt_gen = torch.optim.Adam(self.generator.parameters(), lr=lr, betas=(0.5, 0.9))
         opt_critic = torch.optim.Adam(self.critic.parameters(), lr=lr, betas=(0.5, 0.9))
         
-        return [opt_gen, opt_critic], []
+        return opt_gen, opt_critic
     
     def gradient_penalty(self, real, fake):
         real = real.requires_grad_()
@@ -188,7 +236,6 @@ class WGAN(L.LightningModule):
         opt_g, opt_c = self.optimizers()
         
         # Train Critic: max E[critic(real)] - E[critic(fake)]
-        self.toggle_optimizer(opt_c)
         for _ in range(self.critic_iterations):
             noise = torch.randn(cur_batch_size, self.latent_dim).to("cuda")
             fake = self(noise)
@@ -196,18 +243,32 @@ class WGAN(L.LightningModule):
             critic_fake = self.critic(fake).reshape(-1)
             gp = self.gradient_penalty(real, fake)
             loss_critic = -(torch.mean(critic_real) - torch.mean(critic_fake)) + self.lambda_gp * gp
+            self.log("real_score", torch.mean(critic_real), prog_bar=True)
+            self.log("fake_score", torch.mean(critic_fake), prog_bar=True)
             self.log("d_loss", loss_critic, prog_bar=True)
+            opt_c.zero_grad()
             self.manual_backward(loss_critic, retain_graph=True)
             opt_c.step()
-            opt_c.zero_grad()
-        self.untoggle_optimizer(opt_c)
+            # opt_c.zero_grad()
+            
+        # log sampled dna seqs every 100 epochs
+        # if (self.current_epoch+1) % 100 == 0:
+        #     columns = ["Generated Sequence"]
+        #     data = []
+        #     for i in range(cur_batch_size):
+        #         _, indices = torch.max(fake[i].view(1, self.vocab_size, self.seq_len), dim=1)
+        #         bases = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
+        #         dna_sequence = ''.join(bases[i.item()] for i in indices[0])
+        #         data.append([dna_sequence])
+        #     table = wandb.Table(data=data, columns=columns)
+        #     wandb.log({"Generated seqs": table})
         
         # Train generator
-        self.toggle_optimizer(opt_g)
         gen_fake = self.critic(fake).reshape(-1)
         loss_gen = -torch.mean(gen_fake)
         self.log("g_loss", loss_gen, prog_bar=True)
+        opt_g.zero_grad()
         self.manual_backward(loss_gen)
         opt_g.step()
-        opt_g.zero_grad()
+        # opt_g.zero_grad()
     

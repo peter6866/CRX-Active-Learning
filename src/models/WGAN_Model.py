@@ -18,14 +18,12 @@ class ResBlock(nn.Module):
         self.conv_block1 = nn.Sequential(
             nn.Conv1d(num_channels, num_channels, kernel_size=5, stride=1, padding='same'),
             # nn.InstanceNorm1d(num_channels),
-            # nn.LeakyReLU(0.2)
             nn.ReLU()
         )
         
         self.conv_block2 = nn.Sequential(
             nn.Conv1d(num_channels, num_channels, kernel_size=5, stride=1, padding='same'),
             # nn.InstanceNorm1d(num_channels),
-            # nn.LeakyReLU(0.2)
             nn.ReLU()
         )
 
@@ -55,16 +53,16 @@ class ResBlockCritic(nn.Module):
         
         self.conv_block1 = nn.Sequential(
             nn.Conv1d(num_channels, num_channels, kernel_size=5, stride=1, padding='same'),
-            nn.InstanceNorm1d(num_channels),
-            nn.LeakyReLU(0.1)
-            # nn.ReLU()
+            # nn.InstanceNorm1d(num_channels),
+            # nn.LeakyReLU(0.1)
+            nn.ReLU()
         )
         
         self.conv_block2 = nn.Sequential(
             nn.Conv1d(num_channels, num_channels, kernel_size=5, stride=1, padding='same'),
-            nn.InstanceNorm1d(num_channels),
-            nn.LeakyReLU(0.1)
-            # nn.ReLU()
+            # nn.InstanceNorm1d(num_channels),
+            # nn.LeakyReLU(0.1)
+            nn.ReLU()
         )
 
         self.init_weights()
@@ -164,7 +162,7 @@ class WGAN(L.LightningModule):
     def __init__(
         self,
         seq_len,
-        lr,
+        lr = 1e-4,
         vocab_size = 4,
         latent_dim = 100,
         lambda_gp = 10,
@@ -250,18 +248,6 @@ class WGAN(L.LightningModule):
             self.manual_backward(loss_critic, retain_graph=True)
             opt_c.step()
             # opt_c.zero_grad()
-            
-        # log sampled dna seqs every 100 epochs
-        # if (self.current_epoch+1) % 100 == 0:
-        #     columns = ["Generated Sequence"]
-        #     data = []
-        #     for i in range(cur_batch_size):
-        #         _, indices = torch.max(fake[i].view(1, self.vocab_size, self.seq_len), dim=1)
-        #         bases = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
-        #         dna_sequence = ''.join(bases[i.item()] for i in indices[0])
-        #         data.append([dna_sequence])
-        #     table = wandb.Table(data=data, columns=columns)
-        #     wandb.log({"Generated seqs": table})
         
         # Train generator
         gen_fake = self.critic(fake).reshape(-1)

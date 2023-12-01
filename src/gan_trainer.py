@@ -10,6 +10,15 @@ import numpy as np
 import selene_sdk
 
 
+def generate_one_seq(model):
+    noise = torch.randn(1, 100)
+    sample = model(noise)
+    _, indices = torch.max(sample, dim=1)
+    bases = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
+    dna_sequence = ''.join(bases[i.item()] for i in indices[0])
+    return dna_sequence
+
+
 SEQ_LEN = 164
 LEARNING_RATE = 1e-4
 EPOCHS = 1500
@@ -40,17 +49,9 @@ trainer.fit(model, dataloader)
 
 wandb.finish()
 
-noise = torch.randn(100)
-sample = model(noise)
-_, indices = torch.max(sample, dim=1)
-bases = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
-dna_sequence = ''.join(bases[i.item()] for i in indices[0])
+generated_seqs = []
+for i in range(50):
+    generated_seqs.append(generate_one_seq(model))
 
-noise2 = torch.randn(100)
-sample2 = model(noise2)
-_, indices2 = torch.max(sample2, dim=1)
-bases2 = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
-dna_sequence2 = ''.join(bases2[i.item()] for i in indices2[0])
-
-print(dna_sequence)
-print(dna_sequence2)
+for seq in generated_seqs:
+    print(seq)

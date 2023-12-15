@@ -17,6 +17,8 @@ class UncertaintyDataModule(pl.LightningDataModule):
         self.validate_genomic_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "validate_genomic", sample_type=sample_type)
         self.test_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test", sample_type=sample_type)
         self.test_retinopathy_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test_retinopathy", sample_type=sample_type)
+        self.test_generated_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test_generated", sample_type=sample_type)
+        self.test_mutant_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test_mutant", sample_type=sample_type)
 
     def setup(self, stage=None):
         pass
@@ -35,7 +37,9 @@ class UncertaintyDataModule(pl.LightningDataModule):
        
         return [
             DataLoader(self.test_retinopathy_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, pin_memory=True),
-            DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, pin_memory=True)
+            DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, pin_memory=True),
+            DataLoader(self.test_generated_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, pin_memory=True),
+            DataLoader(self.test_mutant_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, pin_memory=True)
         ]
         
     def predict_dataloader(self):

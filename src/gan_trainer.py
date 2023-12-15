@@ -49,9 +49,9 @@ trainer.fit(model, dataloader)
 
 wandb.finish()
 
-generated_seqs = []
-for i in range(50):
-    generated_seqs.append(generate_one_seq(model))
+# generated_seqs = []
+# for i in range(50):
+#     generated_seqs.append(generate_one_seq(model))
 
-for seq in generated_seqs:
-    print(seq)
+# for seq in generated_seqs:
+#     print(seq)

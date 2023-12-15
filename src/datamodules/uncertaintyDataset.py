@@ -65,6 +65,12 @@ class UncertaintyDataset(Dataset):
             data_df = activity_df[activity_df["test_set"]]
         elif data_type == "test_retinopathy":
             data_df = load_data(retinopathy_path)
+        elif data_type == "test_generated":
+            data_df = pd.read_csv("Data/generated_seqs_genomic_leaky.csv", header=None)
+            data_df = data_df.rename(columns={0: "sequence"})
+            data_df["expression_log2"] = list(np.zeros(len(data_df)))
+        elif data_type == "test_mutant":
+            data_df = activity_df[activity_df["cnn_train"] & activity_df["data_batch_name"].isin(["Genomic"])]
         else:
             raise ValueError(f"Invalid data_type provided: {data_type}")
 

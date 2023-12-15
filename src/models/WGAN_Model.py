@@ -54,15 +54,15 @@ class ResBlockCritic(nn.Module):
         self.conv_block1 = nn.Sequential(
             nn.Conv1d(num_channels, num_channels, kernel_size=5, stride=1, padding='same'),
             # nn.InstanceNorm1d(num_channels),
-            # nn.LeakyReLU(0.1)
-            nn.ReLU()
+            nn.LeakyReLU(0.2)
+            # nn.ReLU()
         )
         
         self.conv_block2 = nn.Sequential(
             nn.Conv1d(num_channels, num_channels, kernel_size=5, stride=1, padding='same'),
             # nn.InstanceNorm1d(num_channels),
-            # nn.LeakyReLU(0.1)
-            nn.ReLU()
+            nn.LeakyReLU(0.2)
+            # nn.ReLU()
         )
 
         self.init_weights()

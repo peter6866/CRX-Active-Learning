@@ -12,6 +12,8 @@ from selene_sdk.utils import load_model_from_state_dict
 import os
 import matplotlib.pyplot as plt
 from mpra_tools import plot_utils
+import seaborn as sns
+import pandas as pd
 
 
 _LOG_2PI = math.log(2 * math.pi)
@@ -91,6 +93,20 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         self.muta_pcc = 0.0
         self.muta_scc = 0.0
         self.muta_count = 0
+
+        # metrics for generated sequences
+        self.generated_mean_values = []
+        self.generated_std_values = []
+        self.generated_pcc = 0.0
+        self.generated_scc = 0.0
+        self.generated_count = 0
+
+        # metrics for crx mutants
+        self.crx_mean_values = []
+        self.crx_std_values = []
+        self.crx_pcc = 0.0
+        self.crx_scc = 0.0
+        self.crx_count = 0
 
         # Predicted vs. observed
         self.retinopathy_truth = []
@@ -179,7 +195,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
             self.retinopathy_pcc += pcc.detach().item()
             self.retinopathy_scc += scc.detach().item()
             self.count += 1
-        else:
+        elif dataloader_idx == 1:
             self.muta_mean_values.append(mean.detach().cpu().numpy())
             self.muta_std_values.append(torch.exp(std).detach().cpu().numpy())
             self.muta_truth.append(target.detach().cpu().numpy())
@@ -187,10 +203,38 @@ class EnhancerUncertaintyModel(pl.LightningModule):
             self.muta_pcc += pcc.detach().item()
             self.muta_scc += scc.detach().item()
             self.muta_count += 1
+        elif dataloader_idx == 2:
+            self.generated_mean_values.append(mean.detach().cpu().numpy())
+            self.generated_std_values.append(torch.exp(std).detach().cpu().numpy())
+
+            self.generated_pcc += pcc.detach().item()
+            self.generated_scc += scc.detach().item()
+            self.generated_count += 1
+        elif dataloader_idx == 3:
+            self.crx_mean_values.append(mean.detach().cpu().numpy())
+            self.crx_std_values.append(torch.exp(std).detach().cpu().numpy())
+
+            self.crx_pcc += pcc.detach().item()
+            self.crx_scc += scc.detach().item()
+            self.crx_count += 1
 
     def on_test_end(self):
         means = np.concatenate(self.mean_values)
         stds = np.concatenate(self.std_values)
+
+        # means = np.concatenate(self.generated_mean_values)
+        # stds = np.concatenate(self.generated_std_values)
+        
+        std_indices = np.where(stds < 1.2)[0]
+        certain_means = means[std_indices]
+        df = pd.DataFrame(certain_means)
+        df.to_csv(os.path.join(self.save_dir, "certain_means.csv"), index=False)
+        # print(len(certain_means), min(certain_means), max(certain_means))
+
+        # plt.figure(figsize=(10, 6), dpi=200)
+        # sns.violinplot(data=certain_means)
+        # plt.title("Distribution of predicted means on generated sequences")
+        # plt.savefig(os.path.join(self.save_dir, "generated_means_distribution.png"))
 
         preds = {
             "retinopathy": means,

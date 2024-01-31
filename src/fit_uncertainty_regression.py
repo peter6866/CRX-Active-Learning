@@ -6,17 +6,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 
 import wandb
 
 from datamodules.uncertaintyDataModule import UncertaintyDataModule
+from datamodules.deepSTARRDataModule import DeepSTARRDataModule
 from models.enhancerUncertaintyModel import EnhancerUncertaintyModel
 
 
 # Global parameters
-SEQ_SIZE = 164
-LR = 0.0003
+LR = 0.001
 BATCH_SIZE = 32
 MAX_EPOCHS = 50
 TRAINING_ON = "Genomic"
@@ -33,8 +34,14 @@ wandb_logger = WandbLogger(
     project='BCLab-Uncertainty',
     name=time.strftime('%Y-%m-%d-%H-%M'),
     group=TRAINING_ON,
-    job_type="fit"
     )
+
+early_stop_callback = EarlyStopping(
+    monitor="val_mse", 
+    min_delta=0.00,
+    patience=5, 
+    verbose=False,
+    mode="min")
 
 trainer = pl.Trainer(
     logger=wandb_logger,
@@ -43,6 +50,7 @@ trainer = pl.Trainer(
     max_epochs=MAX_EPOCHS,
     deterministic=True,
     fast_dev_run=False,
+    # callbacks=[early_stop_callback]
     )
 
 data_module = UncertaintyDataModule(
@@ -53,12 +61,17 @@ data_module = UncertaintyDataModule(
      sample_type=SAMPLE_TYPE
      )
 
+# data_module = DeepSTARRDataModule(
+#     batch_size=BATCH_SIZE
+# )
+
 model = EnhancerUncertaintyModel(
-    sequence_length=SEQ_SIZE,
     learning_rate=LR
 )
 
 torch.set_float32_matmul_precision('high')
 trainer.fit(model, data_module)
+
+trainer.test(model, data_module)
 
 wandb.finish()

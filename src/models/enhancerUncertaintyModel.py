@@ -20,9 +20,8 @@ _LOG_2PI = math.log(2 * math.pi)
 
 
 class EnhancerUncertaintyModel(pl.LightningModule):
-    def __init__(self, sequence_length, learning_rate, sample_type=None):
+    def __init__(self, learning_rate, sample_type=None):
         super().__init__()
-        self.sequence_length = sequence_length
         self.learning_rate = learning_rate
         self.sample_type = sample_type
 
@@ -34,7 +33,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         architecture = [
             [4, 256, 10, "exp", 4, 4],   # 164 --> 41
             [256, 256, 6, "relu", 3, 4], # 41 -->11
-            [256, 64, 3, "relu", 2, 3],   # 11 --> 4
+            [256, 120, 3, "relu", 2, 3],   # 11 --> 4
         ]
 
         layers = []
@@ -50,9 +49,9 @@ class EnhancerUncertaintyModel(pl.LightningModule):
             # Dropout
             layers.append(nn.Dropout(p=conv_dropout))
             # Residual dilation
-            layers.append(DilationBlock(output_filters, dilation_layers))
+            layers.append(DilationBlock(output_filters, dilation_layers, activation="relu"))
             # Activation
-            layers.append(nn.ReLU())
+            layers.append(get_activation("relu"))
             # Dropout
             layers.append(nn.Dropout(p=resid_dropout))
             # Pooling
@@ -186,6 +185,14 @@ class EnhancerUncertaintyModel(pl.LightningModule):
 
         pcc = self.test_pcc(mean.squeeze(), target)
         scc = self.test_scc(mean.squeeze(), target)
+        
+        # self.mean_values.append(mean.detach().cpu().numpy())
+        # self.std_values.append(torch.exp(std).detach().cpu().numpy())
+        # self.retinopathy_truth.append(target.detach().cpu().numpy())
+
+        # self.retinopathy_pcc += pcc.detach().item()
+        # self.retinopathy_scc += scc.detach().item()
+        # self.count += 1
 
         if dataloader_idx == 0:
             self.mean_values.append(mean.detach().cpu().numpy())
@@ -225,10 +232,10 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         # means = np.concatenate(self.generated_mean_values)
         # stds = np.concatenate(self.generated_std_values)
         
-        std_indices = np.where(stds < 1.2)[0]
-        certain_means = means[std_indices]
-        df = pd.DataFrame(certain_means)
-        df.to_csv(os.path.join(self.save_dir, "certain_means.csv"), index=False)
+        # std_indices = np.where(stds < 1.2)[0]
+        # certain_means = means[std_indices]
+        # df = pd.DataFrame(certain_means)
+        # df.to_csv(os.path.join(self.save_dir, "certain_means.csv"), index=False)
         # print(len(certain_means), min(certain_means), max(certain_means))
 
         # plt.figure(figsize=(10, 6), dpi=200)
@@ -289,7 +296,6 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         plt.xticks(fontsize=14)
         plt.yticks(fontsize=14)
         
-        # Optional: Add a grid for better readability
         plt.grid(True, which='both', linestyle='--', linewidth=0.5)
         plt.gca().set_facecolor("#f4f4f4")  # Set a background color
 

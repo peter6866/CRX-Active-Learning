@@ -4,16 +4,16 @@ from pytorch_lightning.loggers import WandbLogger
 import wandb
 
 from datamodules.uncertaintyDataModule import UncertaintyDataModule
+from datamodules.deepSTARRDataModule import DeepSTARRDataModule
 from models.enhancerUncertaintyModel import EnhancerUncertaintyModel
 
 
 # Global parameters
-SEQ_SIZE = 164
-LR = 1e-4
+LR = 0.001
 BATCH_SIZE = 64
 MAX_EPOCHS = 1
 TESTING_ON = "Genomic"
-CHECKPOINT_DIR = "/scratch/bclab/jiayu/active-learning/BCLab-Uncertainty/genomic_base/checkpoints/epoch=49-step=6550.ckpt"
+CHECKPOINT_DIR = "/scratch/bclab/jiayu/Active-learning/BCLab-Uncertainty/i79bimyg/checkpoints/epoch=49-step=6550.ckpt"
 SAMPLE_TYPE = None
 
 data_dir = "Data/activity_summary_stats_and_metadata.txt"
@@ -37,9 +37,12 @@ data_module = UncertaintyDataModule(
      batch_size=BATCH_SIZE
      )
 
+# data_module = DeepSTARRDataModule(
+#     batch_size=BATCH_SIZE
+# )
+
 model = EnhancerUncertaintyModel.load_from_checkpoint(
     CHECKPOINT_DIR,
-    sequence_length=SEQ_SIZE,
     learning_rate=LR,
     sample_type=SAMPLE_TYPE
 )

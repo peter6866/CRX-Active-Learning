@@ -14,11 +14,11 @@ class UncertaintyDataModule(pl.LightningDataModule):
         # Create datasets
         self.train_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "train", sample_type=sample_type)
         self.validate_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "validate", sample_type=sample_type)
-        self.validate_genomic_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "validate_genomic", sample_type=sample_type)
-        self.test_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test", sample_type=sample_type)
+        # self.validate_genomic_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "validate_genomic", sample_type=sample_type)
+        # self.test_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test", sample_type=sample_type)
         self.test_retinopathy_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test_retinopathy", sample_type=sample_type)
-        self.test_generated_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test_generated", sample_type=sample_type)
-        self.test_mutant_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test_mutant", sample_type=sample_type)
+        # self.test_generated_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test_generated", sample_type=sample_type)
+        # self.test_mutant_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "test_mutant", sample_type=sample_type)
 
     def setup(self, stage=None):
         pass
@@ -28,19 +28,18 @@ class UncertaintyDataModule(pl.LightningDataModule):
 
     def val_dataloader(self):
         # Return multiple validation loaders
-        if self.validate_type == "Round4b":
-            return DataLoader(self.validate_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, drop_last=True, pin_memory=True)
-        else:
-            return DataLoader(self.validate_genomic_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, drop_last=True, pin_memory=True)
+        
+        return DataLoader(self.validate_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, drop_last=True, pin_memory=True)
 
     def test_dataloader(self):
        
-        return [
-            DataLoader(self.test_retinopathy_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, pin_memory=True),
-            DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, pin_memory=True),
-            DataLoader(self.test_generated_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, pin_memory=True),
-            DataLoader(self.test_mutant_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, pin_memory=True)
-        ]
+        # return [
+        #     DataLoader(self.test_retinopathy_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, pin_memory=True),
+        #     DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, pin_memory=True),
+        #     DataLoader(self.test_generated_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, pin_memory=True),
+        #     DataLoader(self.test_mutant_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, pin_memory=True)
+        # ]
+        return DataLoader(self.test_retinopathy_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False, pin_memory=True)
         
     def predict_dataloader(self):
         if self.pred_type == "train":

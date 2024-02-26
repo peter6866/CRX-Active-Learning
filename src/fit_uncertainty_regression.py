@@ -12,34 +12,35 @@ from pytorch_lightning.loggers import WandbLogger
 import wandb
 
 from datamodules.uncertaintyDataModule import UncertaintyDataModule
-from datamodules.deepSTARRDataModule import DeepSTARRDataModule
 from models.enhancerUncertaintyModel import EnhancerUncertaintyModel
 
 
 # Global parameters
 LR = 0.001
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 MAX_EPOCHS = 50
-TRAINING_ON = "Genomic"
+TRAINING_ON = "Round4b"
 SAMPLE_TYPE = None
 
-data_dir = "Data/activity_summary_stats_and_metadata.txt"
-retino_dir = "Data/retinopathy_reformatted.txt"
+# data_dir = "Data/activity_summary_stats_and_metadata.txt"
+# retino_dir = "Data/retinopathy_reformatted.txt"
+data_dir = "Data/new_activity_all.csv"
+retino_dir = "Data/new_retinopathy.csv"
 
 pl.seed_everything(7)
 
 wandb.login()
 
 wandb_logger = WandbLogger(
-    project='BCLab-Uncertainty',
+    project='BCLab-New',
     name=time.strftime('%Y-%m-%d-%H-%M'),
-    group=TRAINING_ON,
+    # group=TRAINING_ON,
     )
 
 early_stop_callback = EarlyStopping(
-    monitor="val_mse", 
+    monitor="val_nll_loss", 
     min_delta=0.00,
-    patience=5, 
+    patience=10, 
     verbose=False,
     mode="min")
 
@@ -50,7 +51,7 @@ trainer = pl.Trainer(
     max_epochs=MAX_EPOCHS,
     deterministic=True,
     fast_dev_run=False,
-    # callbacks=[early_stop_callback]
+    callbacks=[early_stop_callback]
     )
 
 data_module = UncertaintyDataModule(
@@ -61,12 +62,10 @@ data_module = UncertaintyDataModule(
      sample_type=SAMPLE_TYPE
      )
 
-# data_module = DeepSTARRDataModule(
-#     batch_size=BATCH_SIZE
-# )
-
 model = EnhancerUncertaintyModel(
-    learning_rate=LR
+    learning_rate=LR,
+    sample_type=SAMPLE_TYPE,
+    label="round1_uncertainty"
 )
 
 torch.set_float32_matmul_precision('high')

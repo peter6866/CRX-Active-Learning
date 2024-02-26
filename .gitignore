@@ -135,6 +135,7 @@ ModelFitting/CNN_Clf/
 BCLab/
 BCLab-Uncertainty/
 BCLab-WGAN/
+BCLab-New/
 log/
 lightning_logs/
 

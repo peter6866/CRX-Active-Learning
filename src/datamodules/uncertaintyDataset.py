@@ -43,16 +43,17 @@ class UncertaintyDataset(Dataset):
         - tokenizer: tokenizer instance for tokenization.
         """
         sequence_key = "sequence"
-        activity_key = "expression_log2"
-        activity_df = load_data(data_path)
+        activity_key = "expression_log2_new"
+        # activity_df = load_data(data_path)
+        activity_df = pd.read_csv(data_path)
         
         batches_to_use = [
             "Genomic",
-            # "CrxMotifMutant",
-            # "Round2",
-            # "Round3a",
-            # "Round3b",
-            # "Round4b",
+            "CrxMotifMutant",
+            "Round2",
+            "Round3a",
+            "Round3b",
+            "Round4b",
         ]
         
         if data_type == "train":
@@ -64,7 +65,8 @@ class UncertaintyDataset(Dataset):
         elif data_type == "test":
             data_df = activity_df[activity_df["test_set"]]
         elif data_type == "test_retinopathy":
-            data_df = load_data(retinopathy_path)
+            # data_df = load_data(retinopathy_path)
+            data_df = pd.read_csv(retinopathy_path)
         elif data_type == "test_generated":
             data_df = pd.read_csv("Data/generated_seqs_genomic_leaky.csv", header=None)
             data_df = data_df.rename(columns={0: "sequence"})

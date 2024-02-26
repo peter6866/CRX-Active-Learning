@@ -20,10 +20,14 @@ _LOG_2PI = math.log(2 * math.pi)
 
 
 class EnhancerUncertaintyModel(pl.LightningModule):
-    def __init__(self, learning_rate, sample_type=None):
+    def __init__(self, learning_rate, sample_type=None, init_var=1, min_var=1e-8, max_var=100, label=None):
         super().__init__()
         self.learning_rate = learning_rate
         self.sample_type = sample_type
+        self.init_var_offset = np.log(np.exp(init_var - min_var) - 1)
+        self.min_var = min_var
+        self.max_var = max_var
+        self.label = label
 
         conv_dropout = 0.1
         resid_dropout = 0.25
@@ -100,13 +104,6 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         self.generated_scc = 0.0
         self.generated_count = 0
 
-        # metrics for crx mutants
-        self.crx_mean_values = []
-        self.crx_std_values = []
-        self.crx_pcc = 0.0
-        self.crx_scc = 0.0
-        self.crx_count = 0
-
         # Predicted vs. observed
         self.retinopathy_truth = []
         self.muta_truth = []
@@ -114,10 +111,15 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         self.save_dir = "ModelFitting/uncertainty"
 
     def forward(self, x):
+        output = self.output(self.conv_net(x))
+        
+        mean = output[:, 0]
+        var = F.softplus(output[:, 1] + self.init_var_offset) + self.min_var
+        var = torch.clamp(var, self.min_var, self.max_var)
 
-        return self.output(self.conv_net(x))
+        return mean, var
     
-    def gaussian_beta_loss(self, mean, std, target, beta=0.5):
+    def gaussian_beta_loss(self, mean, var, target, beta=0.5):
         """Compute beta-NLL loss
 
         :param mean: Predicted mean of shape B x D
@@ -128,30 +130,24 @@ class EnhancerUncertaintyModel(pl.LightningModule):
             high weight on low error points and `1` to an equal weighting.
         :returns: Loss per batch element of shape B
         """
-        std = torch.exp(std)
-        var = std * std
         ll = -0.5 * ((target - mean) ** 2 / var + torch.log(var) + _LOG_2PI)
         weight = var.detach() ** beta
         res = -torch.mean(ll * weight)
 
         return res
     
-    def gauss_loss(self, mean, std, target):
-        std = torch.exp(std)
-        variances = std * std
-
-        log_p = (-torch.log(torch.sqrt(2 * math.pi * variances))
-                - (target - mean) * (target - mean) / (2 * variances))
+    def gauss_loss(self, mean, var, target):
+        log_p = (-torch.log(torch.sqrt(2 * math.pi * var))
+                - (target - mean) * (target - mean) / (2 * var))
 
         return torch.mean(-log_p)
     
     def training_step(self, batch, batch_idx):
         seq, target = batch
         outputs = self(seq)
-        mean = outputs[:, 0]
-        std = outputs[:, 1]
-        beta_nll_loss = self.gaussian_beta_loss(mean=mean, std=std, target=target)
-        loss = self.gauss_loss(mean=mean, std=std, target=target)
+        mean, var = outputs
+        beta_nll_loss = self.gaussian_beta_loss(mean=mean, var=var, target=target)
+        loss = self.gauss_loss(mean=mean, var=var, target=target)
     
         self.log('train_nll_loss', loss, on_epoch=True, on_step=False)
         self.log('train_mse', self.train_mse(mean.squeeze(), target), on_epoch=True, on_step=False)
@@ -167,72 +163,63 @@ class EnhancerUncertaintyModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         seq, target = batch
         outputs = self(seq)
-        mean = outputs[:, 0]
-        std = outputs[:, 1]
-        # loss = self.gaussian_log_likelihood_loss(mean=mean, var=var, target=target)
-        loss = self.gauss_loss(mean=mean, std=std, target=target)
+        mean, var = outputs
+       
+        loss = self.gauss_loss(mean=mean, var=var, target=target)
     
         self.log('val_nll_loss', loss, on_epoch=True, on_step=False)
         self.log('val_mse', self.val_mse(mean.squeeze(), target), on_epoch=True, on_step=False)
         self.log('val_pcc', self.val_pcc(mean.squeeze(), target), on_epoch=True, on_step=False)
         self.log('val_scc', self.val_scc(mean.squeeze(), target), on_epoch=True, on_step=False)
 
-    def test_step(self, batch, batch_idx, dataloader_idx):
+    def test_step(self, batch, batch_idx, dataloader_idx=0):
         seq, target = batch
         outputs = self(seq)
-        mean = outputs[:, 0]
-        std = outputs[:, 1]
+        mean, var = outputs
 
         pcc = self.test_pcc(mean.squeeze(), target)
         scc = self.test_scc(mean.squeeze(), target)
         
-        # self.mean_values.append(mean.detach().cpu().numpy())
-        # self.std_values.append(torch.exp(std).detach().cpu().numpy())
-        # self.retinopathy_truth.append(target.detach().cpu().numpy())
+        self.mean_values.append(mean.detach().cpu().numpy())
+        self.std_values.append(torch.exp(var).detach().cpu().numpy())
+        self.retinopathy_truth.append(target.detach().cpu().numpy())
 
-        # self.retinopathy_pcc += pcc.detach().item()
-        # self.retinopathy_scc += scc.detach().item()
-        # self.count += 1
+        self.retinopathy_pcc += pcc.detach().item()
+        self.retinopathy_scc += scc.detach().item()
+        self.count += 1
 
-        if dataloader_idx == 0:
-            self.mean_values.append(mean.detach().cpu().numpy())
-            self.std_values.append(torch.exp(std).detach().cpu().numpy())
-            self.retinopathy_truth.append(target.detach().cpu().numpy())
+        # if dataloader_idx == 0:
+        #     self.mean_values.append(mean.detach().cpu().numpy())
+        #     self.std_values.append(torch.exp(std).detach().cpu().numpy())
+        #     self.retinopathy_truth.append(target.detach().cpu().numpy())
 
-            self.retinopathy_pcc += pcc.detach().item()
-            self.retinopathy_scc += scc.detach().item()
-            self.count += 1
-        elif dataloader_idx == 1:
-            self.muta_mean_values.append(mean.detach().cpu().numpy())
-            self.muta_std_values.append(torch.exp(std).detach().cpu().numpy())
-            self.muta_truth.append(target.detach().cpu().numpy())
+        #     self.retinopathy_pcc += pcc.detach().item()
+        #     self.retinopathy_scc += scc.detach().item()
+        #     self.count += 1
+        # elif dataloader_idx == 1:
+        #     self.muta_mean_values.append(mean.detach().cpu().numpy())
+        #     self.muta_std_values.append(torch.exp(std).detach().cpu().numpy())
+        #     self.muta_truth.append(target.detach().cpu().numpy())
 
-            self.muta_pcc += pcc.detach().item()
-            self.muta_scc += scc.detach().item()
-            self.muta_count += 1
-        elif dataloader_idx == 2:
-            self.generated_mean_values.append(mean.detach().cpu().numpy())
-            self.generated_std_values.append(torch.exp(std).detach().cpu().numpy())
+        #     self.muta_pcc += pcc.detach().item()
+        #     self.muta_scc += scc.detach().item()
+        #     self.muta_count += 1
+        # elif dataloader_idx == 2:
+        #     self.generated_mean_values.append(mean.detach().cpu().numpy())
+        #     self.generated_std_values.append(torch.exp(std).detach().cpu().numpy())
 
-            self.generated_pcc += pcc.detach().item()
-            self.generated_scc += scc.detach().item()
-            self.generated_count += 1
-        elif dataloader_idx == 3:
-            self.crx_mean_values.append(mean.detach().cpu().numpy())
-            self.crx_std_values.append(torch.exp(std).detach().cpu().numpy())
-
-            self.crx_pcc += pcc.detach().item()
-            self.crx_scc += scc.detach().item()
-            self.crx_count += 1
+        #     self.generated_pcc += pcc.detach().item()
+        #     self.generated_scc += scc.detach().item()
+        #     self.generated_count += 1
 
     def on_test_end(self):
         means = np.concatenate(self.mean_values)
-        stds = np.concatenate(self.std_values)
+        variances = np.concatenate(self.std_values)
 
         # means = np.concatenate(self.generated_mean_values)
-        # stds = np.concatenate(self.generated_std_values)
+        # variances = np.concatenate(self.generated_std_values)
         
-        # std_indices = np.where(stds < 1.2)[0]
+        # std_indices = np.where(variances < 1.2)[0]
         # certain_means = means[std_indices]
         # df = pd.DataFrame(certain_means)
         # df.to_csv(os.path.join(self.save_dir, "certain_means.csv"), index=False)
@@ -245,15 +232,15 @@ class EnhancerUncertaintyModel(pl.LightningModule):
 
         preds = {
             "retinopathy": means,
-            "muta": np.concatenate(self.muta_mean_values)
+            # "muta": np.concatenate(self.muta_mean_values)
         }
 
         truth = {
             "retinopathy": np.concatenate(self.retinopathy_truth),
-            "muta": np.concatenate(self.muta_truth)
+            # "muta": np.concatenate(self.muta_truth)
         }
 
-        for name in ["retinopathy", "muta"]:
+        for name in ["retinopathy"]:
         
             fig, ax = plt.subplots(figsize=plot_utils.get_figsize())
             fig, ax, corrs = plot_utils.scatter_with_corr(
@@ -278,19 +265,15 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         mean_pcc = self.retinopathy_pcc / self.count
         mean_scc = self.retinopathy_scc / self.count
 
-        muta_mean_pcc = self.muta_pcc / self.muta_count
-        muta_mean_scc = self.muta_scc / self.muta_count
+        # muta_mean_pcc = self.muta_pcc / self.muta_count
+        # muta_mean_scc = self.muta_scc / self.muta_count
 
-        # Create a new figure with a specified size and DPI
         plt.figure(figsize=(10, 6), dpi=200)
-        
-        # Scatter plot with customized marker style, edgecolors and size
-        plt.scatter(means, stds, alpha=0.7, c='blue', edgecolors='w', s=50, linewidth=0.5)
+        plt.scatter(means, variances, alpha=0.7, c='blue', edgecolors='w', s=50, linewidth=0.5)
 
-        # Titles, labels with font size and weight adjustments
-        plt.title("Mean vs Standard Deviation on Retinopathy test set", fontsize=18, fontweight='bold')
+        plt.title("Mean vs Variance on Retinopathy test set", fontsize=18, fontweight='bold')
         plt.xlabel("Mean", fontsize=16)
-        plt.ylabel("Standard deviation", fontsize=16)
+        plt.ylabel("Variance", fontsize=16)
         
         # Tweak the tick label size
         plt.xticks(fontsize=14)
@@ -329,29 +312,28 @@ class EnhancerUncertaintyModel(pl.LightningModule):
                     va="bottom",
                     bbox=dict(boxstyle="round,pad=0.3", edgecolor="#ffffff", facecolor="#e1e1e1"))
         
-        plt.annotate(f"Muta: PCC = {muta_mean_pcc:.4f} SCC = {muta_mean_scc:.4f}", 
-                    xy=(0.05, 0.77), 
-                    xycoords='axes fraction',
-                    fontsize=14,
-                    fontweight='bold',
-                    ha="left",
-                    va="bottom",
-                    bbox=dict(boxstyle="round,pad=0.3", edgecolor="#ffffff", facecolor="#e1e1e1"))
+        # plt.annotate(f"Muta: PCC = {muta_mean_pcc:.4f} SCC = {muta_mean_scc:.4f}", 
+        #             xy=(0.05, 0.77), 
+        #             xycoords='axes fraction',
+        #             fontsize=14,
+        #             fontweight='bold',
+        #             ha="left",
+        #             va="bottom",
+        #             bbox=dict(boxstyle="round,pad=0.3", edgecolor="#ffffff", facecolor="#e1e1e1"))
 
         # Make the plot tight layout
         plt.tight_layout()
         
-        file_path = os.path.join(self.save_dir, f"mean_vs_std_plot_on_retinopathy_{self.sample_type}.png")
+        file_path = os.path.join(self.save_dir, f"mean_vs_var_plot_on_retinopathy_{self.sample_type}.png")
         plt.savefig(file_path, bbox_inches='tight')
         plt.close() 
 
     def predict_step(self, batch, batch_idx):
         seq, _ = batch
         outputs = self(seq)
-        mean = outputs[:, 0]
-        std = outputs[:, 1]
+        mean, var = outputs
 
-        return mean, std
+        return mean, var
 
 
 class ResBlock(nn.Module):

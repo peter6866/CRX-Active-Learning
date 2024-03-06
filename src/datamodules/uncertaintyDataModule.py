@@ -4,12 +4,11 @@ from .uncertaintyDataset import UncertaintyDataset
 
 
 class UncertaintyDataModule(pl.LightningDataModule):
-    def __init__(self, data_path, retinopathy_path, validate_type, batch_size, pred_type="train", sample_type=None):
+    def __init__(self, data_path, retinopathy_path, batch_size, pred_type="train", sample_type=None):
         super(UncertaintyDataModule, self).__init__()
         self.data_path = data_path
         self.retinopathy_path = retinopathy_path
         self.batch_size = batch_size
-        self.validate_type = validate_type
         self.pred_type = pred_type
         # Create datasets
         self.train_dataset = UncertaintyDataset(self.data_path, self.retinopathy_path, "train", sample_type=sample_type)

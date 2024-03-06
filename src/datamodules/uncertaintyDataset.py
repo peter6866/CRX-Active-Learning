@@ -43,25 +43,23 @@ class UncertaintyDataset(Dataset):
         - tokenizer: tokenizer instance for tokenization.
         """
         sequence_key = "sequence"
-        activity_key = "expression_log2_new"
+        activity_key = "expression_log2"
         # activity_df = load_data(data_path)
         activity_df = pd.read_csv(data_path)
         
         batches_to_use = [
             "Genomic",
-            "CrxMotifMutant",
-            "Round2",
-            "Round3a",
-            "Round3b",
-            "Round4b",
+            # "CrxMotifMutant",
+            # "Round2",
+            # "Round3a",
+            # "Round3b",
+            # "Round4b",
         ]
         
         if data_type == "train":
             data_df = activity_df[activity_df["cnn_train"] & activity_df["data_batch_name"].isin(batches_to_use)]
         elif data_type == "validate":
             data_df = activity_df[activity_df["cnn_validation_set"]]
-        elif data_type == "validate_genomic":
-            data_df = activity_df[activity_df["cnn_validation_set"] & activity_df["original_genomic"]]
         elif data_type == "test":
             data_df = activity_df[activity_df["test_set"]]
         elif data_type == "test_retinopathy":

@@ -86,20 +86,20 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         self.val_mse = torchmetrics.MeanSquaredError()
 
         self.mean_values = []
-        self.std_values = []
+        self.var_values = []
         self.retinopathy_pcc = 0.0
         self.retinopathy_scc = 0.0
         self.count = 0
 
         self.muta_mean_values = []
-        self.muta_std_values = []
+        self.muta_var_values = []
         self.muta_pcc = 0.0
         self.muta_scc = 0.0
         self.muta_count = 0
 
         # metrics for generated sequences
         self.generated_mean_values = []
-        self.generated_std_values = []
+        self.generated_var_values = []
         self.generated_pcc = 0.0
         self.generated_scc = 0.0
         self.generated_count = 0
@@ -181,7 +181,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         scc = self.test_scc(mean.squeeze(), target)
         
         self.mean_values.append(mean.detach().cpu().numpy())
-        self.std_values.append(torch.exp(var).detach().cpu().numpy())
+        self.var_values.append(var.detach().cpu().numpy())
         self.retinopathy_truth.append(target.detach().cpu().numpy())
 
         self.retinopathy_pcc += pcc.detach().item()
@@ -190,7 +190,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
 
         # if dataloader_idx == 0:
         #     self.mean_values.append(mean.detach().cpu().numpy())
-        #     self.std_values.append(torch.exp(std).detach().cpu().numpy())
+        #     self.var_values.append(torch.exp(std).detach().cpu().numpy())
         #     self.retinopathy_truth.append(target.detach().cpu().numpy())
 
         #     self.retinopathy_pcc += pcc.detach().item()
@@ -198,7 +198,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         #     self.count += 1
         # elif dataloader_idx == 1:
         #     self.muta_mean_values.append(mean.detach().cpu().numpy())
-        #     self.muta_std_values.append(torch.exp(std).detach().cpu().numpy())
+        #     self.muta_var_values.append(torch.exp(std).detach().cpu().numpy())
         #     self.muta_truth.append(target.detach().cpu().numpy())
 
         #     self.muta_pcc += pcc.detach().item()
@@ -206,7 +206,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         #     self.muta_count += 1
         # elif dataloader_idx == 2:
         #     self.generated_mean_values.append(mean.detach().cpu().numpy())
-        #     self.generated_std_values.append(torch.exp(std).detach().cpu().numpy())
+        #     self.generated_var_values.append(torch.exp(std).detach().cpu().numpy())
 
         #     self.generated_pcc += pcc.detach().item()
         #     self.generated_scc += scc.detach().item()
@@ -214,10 +214,10 @@ class EnhancerUncertaintyModel(pl.LightningModule):
 
     def on_test_end(self):
         means = np.concatenate(self.mean_values)
-        variances = np.concatenate(self.std_values)
+        variances = np.concatenate(self.var_values)
 
         # means = np.concatenate(self.generated_mean_values)
-        # variances = np.concatenate(self.generated_std_values)
+        # variances = np.concatenate(self.generated_var_values)
         
         # std_indices = np.where(variances < 1.2)[0]
         # certain_means = means[std_indices]
@@ -259,7 +259,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
             vmin = max(xlim[0], ylim[0])
             vmax = min(xlim[1], ylim[1])
             ax.plot([vmin, vmax], [vmin, vmax], color="k", linestyle="--", lw=1)
-            plot_utils.save_fig(fig, os.path.join(self.save_dir, f"{name}PredVsObs"))
+            plot_utils.save_fig(fig, os.path.join(self.save_dir, f"{name}PredVsObs_{self.label}"))
             plt.close()
 
         mean_pcc = self.retinopathy_pcc / self.count
@@ -324,7 +324,7 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         # Make the plot tight layout
         plt.tight_layout()
         
-        file_path = os.path.join(self.save_dir, f"mean_vs_var_plot_on_retinopathy_{self.sample_type}.png")
+        file_path = os.path.join(self.save_dir, f"mean_vs_var_plot_on_retinopathy_{self.sample_type}_{self.label}.png")
         plt.savefig(file_path, bbox_inches='tight')
         plt.close() 
 

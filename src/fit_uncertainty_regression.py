@@ -19,7 +19,7 @@ from models.enhancerUncertaintyModel import EnhancerUncertaintyModel
 LR = 0.001
 BATCH_SIZE = 64
 MAX_EPOCHS = 50
-TRAINING_ON = "Round4b"
+# TRAINING_ON = "Round4b"
 SAMPLE_TYPE = None
 
 # data_dir = "Data/activity_summary_stats_and_metadata.txt"
@@ -27,7 +27,7 @@ SAMPLE_TYPE = None
 data_dir = "Data/new_activity_all.csv"
 retino_dir = "Data/new_retinopathy.csv"
 
-pl.seed_everything(7)
+pl.seed_everything(42)
 
 wandb.login()
 
@@ -40,7 +40,7 @@ wandb_logger = WandbLogger(
 early_stop_callback = EarlyStopping(
     monitor="val_nll_loss", 
     min_delta=0.00,
-    patience=10, 
+    patience=15, 
     verbose=False,
     mode="min")
 
@@ -51,13 +51,12 @@ trainer = pl.Trainer(
     max_epochs=MAX_EPOCHS,
     deterministic=True,
     fast_dev_run=False,
-    callbacks=[early_stop_callback]
+    # callbacks=[early_stop_callback]
     )
 
 data_module = UncertaintyDataModule(
      data_path=data_dir,
      retinopathy_path=retino_dir,
-     validate_type=TRAINING_ON,
      batch_size=BATCH_SIZE,
      sample_type=SAMPLE_TYPE
      )
@@ -65,7 +64,7 @@ data_module = UncertaintyDataModule(
 model = EnhancerUncertaintyModel(
     learning_rate=LR,
     sample_type=SAMPLE_TYPE,
-    label="round1_uncertainty"
+    label=f"Genomic_baseline"
 )
 
 torch.set_float32_matmul_precision('high')

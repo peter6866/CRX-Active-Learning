@@ -49,11 +49,11 @@ class UncertaintyDataset(Dataset):
         
         batches_to_use = [
             "Genomic",
-            # "CrxMotifMutant",
-            # "Round2",
-            # "Round3a",
-            # "Round3b",
-            # "Round4b",
+            "CrxMotifMutant",
+            "Round2",
+            "Round3a",
+            "Round3b",
+            "Round4b",
         ]
         
         if data_type == "train":
@@ -76,15 +76,27 @@ class UncertaintyDataset(Dataset):
 
         sequences = data_df[sequence_key]
         
-        if sample_type is not None:
+        if sample_type is not None and data_type == "train":
             if sample_type == "random":
-                sample_df = pd.read_csv("Data/Sampling_Test/all_samples_round2.csv")
-                round1_df = pd.read_csv("Data/Sampling_Test/all_samples.csv")
-                sample_df = pd.concat([sample_df, round1_df], ignore_index=True).sample(n=15000)
+                sample_df = pd.read_csv("Data/new_random_5k_round1.csv")
+                # round2_df = pd.read_csv("Data/new_random_5k_round2.csv")
+                # sample_df = pd.concat([sample_df, round2_df], ignore_index=True)
+                # round3_df = pd.read_csv("Data/new_random_5k_round3.csv")
+                # sample_df = pd.concat([sample_df, round3_df], ignore_index=True)
+                # round4_df = pd.read_csv("Data/new_random_5k_round4.csv")
+                # sample_df = pd.concat([sample_df, round4_df], ignore_index=True)
+                # round5_df = pd.read_csv("Data/new_round4_random_remain.csv")
+                # sample_df = pd.concat([sample_df, round5_df], ignore_index=True)
             elif sample_type == "uncertainty":
-                sample_df = pd.read_csv("Data/Sampling_Test/largest_samples_round2.csv")
-                round1_df = pd.read_csv("Data/Sampling_Test/largest_samples.csv")
-                sample_df = pd.concat([sample_df, round1_df], ignore_index=True)
+                sample_df = pd.read_csv("Data/new_uncertainty_5k_round1.csv")
+                # round2_df = pd.read_csv("Data/new_uncertainty_5k_round2.csv")
+                # sample_df = pd.concat([sample_df, round2_df], ignore_index=True)
+                # round3_df = pd.read_csv("Data/new_uncertainty_5k_round3.csv")
+                # sample_df = pd.concat([sample_df, round3_df], ignore_index=True)
+                # round4_df = pd.read_csv("Data/new_uncertainty_5k_round4.csv")
+                # sample_df = pd.concat([sample_df, round4_df], ignore_index=True)
+                # round5_df = pd.read_csv("Data/new_round4_uncertainty_remain.csv")
+                # sample_df = pd.concat([sample_df, round5_df], ignore_index=True)
             elif sample_type == "bin_uncertainty":
                 sample_df = pd.read_csv("Data/Sampling_Test/largest_bin_samples_round2.csv")
                 round1_df = pd.read_csv("Data/Sampling_Test/largest_bin_samples.csv")

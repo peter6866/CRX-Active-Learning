@@ -294,23 +294,23 @@ class EnhancerUncertaintyModel(pl.LightningModule):
                     bbox=dict(boxstyle="round,pad=0.3", edgecolor="#ffffff", facecolor="#e1e1e1"))
         
         # Annotate the test_retinopathy_pcc and test_retinopathy_scc
-        plt.annotate(f"PCC = {mean_pcc:.4f}", 
-                    xy=(0.05, 0.93), 
-                    xycoords='axes fraction',
-                    fontsize=14,
-                    fontweight='bold',
-                    ha="left",
-                    va="bottom",
-                    bbox=dict(boxstyle="round,pad=0.3", edgecolor="#ffffff", facecolor="#e1e1e1"))
+        # plt.annotate(f"PCC = {mean_pcc:.4f}", 
+        #             xy=(0.05, 0.93), 
+        #             xycoords='axes fraction',
+        #             fontsize=14,
+        #             fontweight='bold',
+        #             ha="left",
+        #             va="bottom",
+        #             bbox=dict(boxstyle="round,pad=0.3", edgecolor="#ffffff", facecolor="#e1e1e1"))
 
-        plt.annotate(f"SCC = {mean_scc:.4f}", 
-                    xy=(0.05, 0.85), 
-                    xycoords='axes fraction',
-                    fontsize=14,
-                    fontweight='bold',
-                    ha="left",
-                    va="bottom",
-                    bbox=dict(boxstyle="round,pad=0.3", edgecolor="#ffffff", facecolor="#e1e1e1"))
+        # plt.annotate(f"SCC = {mean_scc:.4f}", 
+        #             xy=(0.05, 0.85), 
+        #             xycoords='axes fraction',
+        #             fontsize=14,
+        #             fontweight='bold',
+        #             ha="left",
+        #             va="bottom",
+        #             bbox=dict(boxstyle="round,pad=0.3", edgecolor="#ffffff", facecolor="#e1e1e1"))
         
         # plt.annotate(f"Muta: PCC = {muta_mean_pcc:.4f} SCC = {muta_mean_scc:.4f}", 
         #             xy=(0.05, 0.77), 
@@ -324,8 +324,8 @@ class EnhancerUncertaintyModel(pl.LightningModule):
         # Make the plot tight layout
         plt.tight_layout()
         
-        file_path = os.path.join(self.save_dir, f"mean_vs_var_plot_on_retinopathy_{self.sample_type}_{self.label}.png")
-        plt.savefig(file_path, bbox_inches='tight')
+        # file_path = os.path.join(self.save_dir, f"mean_vs_var_plot_on_retinopathy_{self.sample_type}_{self.label}.png")
+        # plt.savefig(file_path, bbox_inches='tight')
         plt.close() 
 
     def predict_step(self, batch, batch_idx):

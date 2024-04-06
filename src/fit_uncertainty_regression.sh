@@ -6,9 +6,10 @@
 #SBATCH -p gpu
 #SBATCH --gpus=1
 #SBATCH --mem=64G
-#SBATCH -o log/uncertainty_regression_%j.out
-#SBATCH -e log/uncertainty_regression_%j.err
+#SBATCH --array=1-20%5
+#SBATCH -o log/uncertainty_regression_%a.out
+#SBATCH -e log/uncertainty_regression_%a.err
 #SBATCH --mail-type=END,FAIL
 
+python3 src/fit_uncertainty_regression.py $SLURM_ARRAY_TASK_ID
 
-python3 src/fit_uncertainty_regression.py

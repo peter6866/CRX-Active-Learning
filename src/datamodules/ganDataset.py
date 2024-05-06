@@ -34,8 +34,10 @@ def one_hot_encode(seqs):
 class ganDataset(Dataset):
     
     def __init__(self, data_path):
+        # sequence_key = "sequence"
         sequence_key = "sequence"
-        activity_df = load_data(data_path)
+        # activity_df = load_data(data_path)
+        activity_df = pd.read_csv(data_path)
 
         batches_to_use = [
             "Genomic",
@@ -46,8 +48,8 @@ class ganDataset(Dataset):
             # "Round4b",
         ]
         
-        data_df = activity_df[activity_df["cnn_train"] & activity_df["data_batch_name"].isin(batches_to_use)]
-        self.sequences = data_df[sequence_key]
+        # data_df = activity_df[activity_df["cnn_train"] & activity_df["data_batch_name"].isin(batches_to_use)]
+        self.sequences = activity_df[sequence_key]
         
         self.seqs_hot = one_hot_encode(self.sequences)
         

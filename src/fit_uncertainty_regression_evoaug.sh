@@ -12,4 +12,3 @@
 #SBATCH --mail-type=END,FAIL
 
 python3 src/fit_uncertainty_regression_evoaug.py $SLURM_ARRAY_TASK_ID
-

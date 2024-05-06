@@ -23,8 +23,6 @@ def fit_uncertainty_model(seed):
     MAX_EPOCHS = 50
     SAMPLE_TYPE = None
 
-    # data_dir = "Data/activity_summary_stats_and_metadata.txt"
-    # retino_dir = "Data/retinopathy_reformatted.txt"
     data_dir = "Data/new_activity_all.csv"
     retino_dir = "Data/new_retinopathy.csv"
 
@@ -38,13 +36,6 @@ def fit_uncertainty_model(seed):
 
     pl.seed_everything(seed)
 
-    # wandb.login()
-
-    # wandb_logger = WandbLogger(
-    #     project='BCLab-New',
-    #     name=time.strftime('%Y-%m-%d-%H-%M'),
-    #     )
-
     early_stop_callback = EarlyStopping(
         monitor="val_nll_loss", 
         min_delta=0.00,
@@ -56,7 +47,7 @@ def fit_uncertainty_model(seed):
         monitor="val_nll_loss",
         save_top_k=1,
         mode="min",
-        dirpath="/scratch/bclab/jiayu/Active-learning/ModelFitting/uncertainty/evoaug",
+        dirpath="/scratch/bclab/jiayu/al/ModelFitting/evoaug",
         filename=f"topmodel-{seed}"
     )
 
@@ -93,7 +84,7 @@ def fit_uncertainty_model(seed):
     trainer.test(model, data_module)
 
     model_finetune = EnhancerUncertaintyEvoAugModel.load_from_checkpoint(
-        f"/scratch/bclab/jiayu/Active-learning/ModelFitting/uncertainty/evoaug/topmodel-{seed}.ckpt",
+        f"/scratch/bclab/jiayu/al/ModelFitting/evoaug/topmodel-{seed}.ckpt",
         learning_rate=0.0001,
         sample_type=SAMPLE_TYPE,
         label=f"genomic_{SAMPLE_TYPE}_{seed}_finetune",
@@ -103,6 +94,14 @@ def fit_uncertainty_model(seed):
         finetune=True,
         inference_aug=False
     )
+    
+    callback_topmodel = ModelCheckpoint(
+        monitor="val_nll_loss",
+        save_top_k=1,
+        mode="min",
+        dirpath="/scratch/bclab/jiayu/al/ModelFitting/uncertainty/genomic",
+        filename=f"topmodel-{seed}"
+    )
 
     trainer = pl.Trainer(
         logger=None,
@@ -110,6 +109,7 @@ def fit_uncertainty_model(seed):
         devices=-1,
         max_epochs=10,
         deterministic=True,
+        callbacks=[callback_topmodel],
     )
 
     trainer.fit(model_finetune, data_module)

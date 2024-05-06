@@ -15,8 +15,8 @@ def generate_one_seq(model):
     return dna_sequence
 
 
-SEQ_LEN = 164
-CKPT_DIR = "/scratch/bclab/jiayu/active-learning/BCLab-WGAN/aoawncia/checkpoints/epoch=1499-step=594000.ckpt"
+SEQ_LEN = 200
+CKPT_DIR = "/scratch/bclab/jiayu/al/BCLab-WGAN/5e7gdvnk/checkpoints/epoch=1499-step=6165000.ckpt"
 SAVE_DIR = "ModelFitting/GAN"
 
 model = WGAN.load_from_checkpoint(
@@ -27,11 +27,11 @@ model = WGAN.load_from_checkpoint(
 model.eval()
 
 generated_seqs = []
-for i in range(4658):
+for i in range(10000):
     generated_seqs.append(generate_one_seq(model))
     
 # Save generated sequences to a csv file
 df = pd.DataFrame(generated_seqs)
-df.to_csv(os.path.join(SAVE_DIR, "generated_seqs.csv"), index=False, header=False)
+df.to_csv(os.path.join(SAVE_DIR, "generated_seqs_1500.csv"), index=False, header=False)
 
 print("Done!")

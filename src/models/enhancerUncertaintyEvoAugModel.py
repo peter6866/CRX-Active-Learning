@@ -150,6 +150,13 @@ class EnhancerUncertaintyEvoAugModel(pl.LightningModule):
                 - (target - mean) * (target - mean) / (2 * var))
 
         return torch.mean(-log_p)
+
+    def gamma_nll_loss(self, mean, var, target):
+        alpha = mean ** 2 / var
+        beta = mean / var
+
+        nll = alpha * torch.log(beta) - torch.lgamma(alpha) + (alpha - 1) * torch.log(target) - beta * target
+        return torch.mean(nll)
     
     def training_step(self, batch, batch_idx):
         seq, target = batch
@@ -163,7 +170,8 @@ class EnhancerUncertaintyEvoAugModel(pl.LightningModule):
         mean, var = outputs
         beta_nll_loss = self.gaussian_beta_loss(mean=mean, var=var, target=target)
         loss = self.gauss_loss(mean=mean, var=var, target=target)
-    
+        
+
         self.log('train_nll_loss', loss, on_epoch=True, on_step=False)
         self.log('train_mse', self.train_mse(mean.squeeze(), target), on_epoch=True, on_step=False)
         self.log('train_pcc', self.train_pcc(mean.squeeze(), target), on_epoch=True, on_step=False)
@@ -188,7 +196,7 @@ class EnhancerUncertaintyEvoAugModel(pl.LightningModule):
         mean, var = outputs
        
         loss = self.gauss_loss(mean=mean, var=var, target=target)
-    
+        
         self.log('val_nll_loss', loss, on_epoch=True, on_step=False)
         self.log('val_mse', self.val_mse(mean.squeeze(), target), on_epoch=True, on_step=False)
         self.log('val_pcc', self.val_pcc(mean.squeeze(), target), on_epoch=True, on_step=False)
@@ -260,16 +268,16 @@ class EnhancerUncertaintyEvoAugModel(pl.LightningModule):
         # plt.savefig(os.path.join(self.save_dir, "generated_means_distribution.png"))
 
         preds = {
-            "retinopathy": means,
+            "ret": means,
             # "muta": np.concatenate(self.muta_mean_values)
         }
 
         truth = {
-            "retinopathy": np.concatenate(self.retinopathy_truth),
+            "ret": np.concatenate(self.retinopathy_truth),
             # "muta": np.concatenate(self.muta_truth)
         }
 
-        for name in ["retinopathy"]:
+        for name in ["ret"]:
         
             fig, ax = plt.subplots(figsize=plot_utils.get_figsize())
             fig, ax, corrs = plot_utils.scatter_with_corr(
@@ -288,7 +296,8 @@ class EnhancerUncertaintyEvoAugModel(pl.LightningModule):
             vmin = max(xlim[0], ylim[0])
             vmax = min(xlim[1], ylim[1])
             ax.plot([vmin, vmax], [vmin, vmax], color="k", linestyle="--", lw=1)
-            plot_utils.save_fig(fig, os.path.join(self.save_dir, f"{name}PredVsObs_{self.label}"))
+            if self.finetune:
+                plot_utils.save_fig(fig, os.path.join(self.save_dir, f"{name}PredVsObs_{self.label}"))
             plt.close()
 
         mean_pcc = self.retinopathy_pcc / self.count

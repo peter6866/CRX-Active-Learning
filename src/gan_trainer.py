@@ -19,20 +19,22 @@ def generate_one_seq(model):
     return dna_sequence
 
 
-SEQ_LEN = 164
-LEARNING_RATE = 1e-4
-EPOCHS = 1500
-data_dir = "Data/activity_summary_stats_and_metadata.txt"
+SEQ_LEN = 200
+LEARNING_RATE = 3e-4
+EPOCHS = 500
+BATCH_SIZE = 256
+# data_dir = "Data/activity_summary_stats_and_metadata.txt"
+data_dir = "Data/wHeader_justEnh_Ahituv_MRPA_lib.csv"
 
 pl.seed_everything(42)
 
 wandb_logger = WandbLogger(
     project='BCLab-WGAN',
-    name=time.strftime('%m-%d-%H-%M') + f"-lr: {LEARNING_RATE}",
+    name=time.strftime('%m-%d-%H-%M') + f'-lr={LEARNING_RATE}-batch_size={BATCH_SIZE}',
     )
 
 dataset = ganDataset(data_dir)
-dataloader = DataLoader(dataset, batch_size=64, num_workers=4, shuffle=True)
+dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, num_workers=4, shuffle=True)
 
 model = WGAN(seq_len=SEQ_LEN, lr=LEARNING_RATE)
 

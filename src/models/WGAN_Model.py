@@ -162,7 +162,8 @@ class WGAN(L.LightningModule):
     def __init__(
         self,
         seq_len,
-        lr = 1e-4,
+        gen_lr = 1e-4,
+        critic_lr = 1e-4,
         vocab_size = 4,
         latent_dim = 100,
         lambda_gp = 10,
@@ -170,7 +171,8 @@ class WGAN(L.LightningModule):
     ):
         super().__init__()
         self.automatic_optimization = False
-        self.lr = lr
+        self.gen_lr = gen_lr
+        self.critic_lr = critic_lr
         self.critic_iterations = critic_iterations
         self.latent_dim = latent_dim
         self.lambda_gp = lambda_gp
@@ -197,10 +199,8 @@ class WGAN(L.LightningModule):
         return self.generator(z)
     
     def configure_optimizers(self):
-        lr = self.lr
-        
-        opt_gen = torch.optim.Adam(self.generator.parameters(), lr=lr, betas=(0.5, 0.9))
-        opt_critic = torch.optim.Adam(self.critic.parameters(), lr=lr, betas=(0.5, 0.9))
+        opt_gen = torch.optim.Adam(self.generator.parameters(), lr=self.gen_lr, betas=(0.5, 0.9))
+        opt_critic = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr, betas=(0.5, 0.9))
         
         return opt_gen, opt_critic
     

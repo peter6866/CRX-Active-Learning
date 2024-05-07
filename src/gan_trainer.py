@@ -20,8 +20,9 @@ def generate_one_seq(model):
 
 
 SEQ_LEN = 200
-LEARNING_RATE = 3e-4
-EPOCHS = 500
+GEN_LR = 2e-4
+CRITIC_LR = 1e-4
+EPOCHS = 1000
 BATCH_SIZE = 256
 # data_dir = "Data/activity_summary_stats_and_metadata.txt"
 data_dir = "Data/wHeader_justEnh_Ahituv_MRPA_lib.csv"
@@ -30,13 +31,13 @@ pl.seed_everything(42)
 
 wandb_logger = WandbLogger(
     project='BCLab-WGAN',
-    name=time.strftime('%m-%d-%H-%M') + f'-lr={LEARNING_RATE}-batch_size={BATCH_SIZE}',
+    name=time.strftime('%m-%d-%H-%M') + f'_{GEN_LR}_{CRITIC_LR}_{BATCH_SIZE}',
     )
 
 dataset = ganDataset(data_dir)
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, num_workers=4, shuffle=True)
 
-model = WGAN(seq_len=SEQ_LEN, lr=LEARNING_RATE)
+model = WGAN(seq_len=SEQ_LEN, gen_lr=GEN_LR, critic_lr=CRITIC_LR)
 
 trainer = pl.Trainer(
     logger=wandb_logger,
@@ -50,10 +51,3 @@ torch.set_float32_matmul_precision('high')
 trainer.fit(model, dataloader)
 
 wandb.finish()
-
-# generated_seqs = []
-# for i in range(50):
-#     generated_seqs.append(generate_one_seq(model))
-
-# for seq in generated_seqs:
-#     print(seq)

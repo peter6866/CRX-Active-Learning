@@ -17,13 +17,11 @@ class ResBlock(nn.Module):
         
         self.conv_block1 = nn.Sequential(
             nn.Conv1d(num_channels, num_channels, kernel_size=5, stride=1, padding='same'),
-            # nn.InstanceNorm1d(num_channels),
             nn.ReLU()
         )
         
         self.conv_block2 = nn.Sequential(
             nn.Conv1d(num_channels, num_channels, kernel_size=5, stride=1, padding='same'),
-            # nn.InstanceNorm1d(num_channels),
             nn.ReLU()
         )
 
@@ -53,16 +51,12 @@ class ResBlockCritic(nn.Module):
         
         self.conv_block1 = nn.Sequential(
             nn.Conv1d(num_channels, num_channels, kernel_size=5, stride=1, padding='same'),
-            # nn.InstanceNorm1d(num_channels),
             nn.LeakyReLU(0.2)
-            # nn.ReLU()
         )
         
         self.conv_block2 = nn.Sequential(
             nn.Conv1d(num_channels, num_channels, kernel_size=5, stride=1, padding='same'),
-            # nn.InstanceNorm1d(num_channels),
             nn.LeakyReLU(0.2)
-            # nn.ReLU()
         )
 
         self.init_weights()
@@ -91,13 +85,6 @@ class Generator(nn.Module):
         
         # Linear layer to transform the latent vector
         self.linear = nn.Linear(latent_dim, seq_len * num_channels)
-        # self.linear = nn.Sequential(
-        #     nn.Linear(latent_dim, 256),
-        #     nn.ReLU(),
-        #     nn.Linear(256, seq_len * num_channels),
-        # )
-
-        # self.batch_norm = nn.BatchNorm1d(num_channels)
         
         self.res_blocks = nn.ModuleList([ResBlock(num_channels, res_rate) for _ in range(res_layers)])
         
@@ -247,7 +234,6 @@ class WGAN(L.LightningModule):
             opt_c.zero_grad()
             self.manual_backward(loss_critic, retain_graph=True)
             opt_c.step()
-            # opt_c.zero_grad()
         
         # Train generator
         gen_fake = self.critic(fake).reshape(-1)
@@ -256,5 +242,4 @@ class WGAN(L.LightningModule):
         opt_g.zero_grad()
         self.manual_backward(loss_gen)
         opt_g.step()
-        # opt_g.zero_grad()
     

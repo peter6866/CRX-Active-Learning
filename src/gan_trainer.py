@@ -10,22 +10,14 @@ import numpy as np
 import selene_sdk
 
 
-def generate_one_seq(model):
-    noise = torch.randn(1, 100)
-    sample = model(noise)
-    _, indices = torch.max(sample, dim=1)
-    bases = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
-    dna_sequence = ''.join(bases[i.item()] for i in indices[0])
-    return dna_sequence
-
-
-SEQ_LEN = 200
-GEN_LR = 2e-4
+SEQ_LEN = 300
+GEN_LR = 1e-4
 CRITIC_LR = 1e-4
-EPOCHS = 1000
+EPOCHS = 1500
 BATCH_SIZE = 256
 # data_dir = "Data/activity_summary_stats_and_metadata.txt"
-data_dir = "Data/wHeader_justEnh_Ahituv_MRPA_lib.csv"
+# data_dir = "Data/wHeader_justEnh_Ahituv_MRPA_lib.csv"
+data_dir = "Data/atac_seq_data.csv"
 
 pl.seed_everything(42)
 

@@ -34,7 +34,6 @@ def one_hot_encode(seqs):
 class ganDataset(Dataset):
     
     def __init__(self, data_path):
-        # sequence_key = "sequence"
         sequence_key = "sequence"
         # activity_df = load_data(data_path)
         activity_df = pd.read_csv(data_path)

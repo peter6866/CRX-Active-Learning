@@ -149,8 +149,8 @@ class WGAN(L.LightningModule):
     def __init__(
         self,
         seq_len,
-        gen_lr = 1e-4,
-        critic_lr = 1e-4,
+        gen_lr = 0.0001,
+        critic_lr = 0.0001,
         vocab_size = 4,
         latent_dim = 100,
         lambda_gp = 10,
@@ -186,8 +186,16 @@ class WGAN(L.LightningModule):
         return self.generator(z)
     
     def configure_optimizers(self):
-        opt_gen = torch.optim.Adam(self.generator.parameters(), lr=self.gen_lr, betas=(0.5, 0.9))
-        opt_critic = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr, betas=(0.5, 0.9))
+        opt_gen = torch.optim.Adam(
+            self.generator.parameters(), 
+            lr=self.gen_lr, 
+            betas=(0.5, 0.9)
+        )
+        opt_critic = torch.optim.Adam(
+            self.critic.parameters(), 
+            lr=self.critic_lr, 
+            betas=(0.5, 0.9)
+        )
         
         return opt_gen, opt_critic
     
@@ -228,9 +236,13 @@ class WGAN(L.LightningModule):
             critic_fake = self.critic(fake).reshape(-1)
             gp = self.gradient_penalty(real, fake)
             loss_critic = -(torch.mean(critic_real) - torch.mean(critic_fake)) + self.lambda_gp * gp
+
+            # Log metrics
             self.log("real_score", torch.mean(critic_real), prog_bar=True)
             self.log("fake_score", torch.mean(critic_fake), prog_bar=True)
             self.log("d_loss", loss_critic, prog_bar=True)
+
+            # Optimize critic
             opt_c.zero_grad()
             self.manual_backward(loss_critic, retain_graph=True)
             opt_c.step()
@@ -238,7 +250,11 @@ class WGAN(L.LightningModule):
         # Train generator
         gen_fake = self.critic(fake).reshape(-1)
         loss_gen = -torch.mean(gen_fake)
+
+        # Log metrics
         self.log("g_loss", loss_gen, prog_bar=True)
+
+        # Optimize generator
         opt_g.zero_grad()
         self.manual_backward(loss_gen)
         opt_g.step()

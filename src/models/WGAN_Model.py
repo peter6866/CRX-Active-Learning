@@ -155,6 +155,8 @@ class WGAN(L.LightningModule):
         latent_dim = 100,
         lambda_gp = 10,
         critic_iterations = 5,
+        epochs = 1000,
+        eta_min=1e-6,  # Minimum learning rate
     ):
         super().__init__()
         self.automatic_optimization = False
@@ -165,6 +167,9 @@ class WGAN(L.LightningModule):
         self.lambda_gp = lambda_gp
         self.vocab_size = vocab_size
         self.seq_len = seq_len
+        self.epochs = epochs
+        self.T_max = epochs // 4
+        self.eta_min = eta_min
         
         # Initialize networks
         self.generator = Generator(
@@ -196,8 +201,29 @@ class WGAN(L.LightningModule):
             lr=self.critic_lr, 
             betas=(0.5, 0.9)
         )
+
+        # scheduler for critic
+        scheduler_critic = torch.optim.lr_scheduler.CosineAnnealingLR(
+            opt_critic,
+            T_max=self.epochs,
+            eta_min=self.eta_min
+        )
+
+        # scheduler for generator
+        scheduler_gen = torch.optim.lr_scheduler.CosineAnnealingLR(
+            opt_gen,
+            T_max=self.T_max,
+            eta_min=self.eta_min
+        )
+
+        # scheduler_gen = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+        #     opt_gen,
+        #     T_0=self.T_max,
+        #     T_mult=2,
+        #     eta_min=self.eta_min
+        # )
         
-        return opt_gen, opt_critic
+        return [opt_gen, opt_critic], [scheduler_gen, scheduler_critic]
     
     def gradient_penalty(self, real, fake):
         real = real.requires_grad_()

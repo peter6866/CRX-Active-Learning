@@ -10,20 +10,20 @@ import numpy as np
 import selene_sdk
 
 
-SEQ_LEN = 300
+SEQ_LEN = 227
 GEN_LR = 1e-4
 CRITIC_LR = 8e-5
 EPOCHS = 1500
 BATCH_SIZE = 256
 # data_dir = "Data/activity_summary_stats_and_metadata.txt"
 # data_dir = "Data/wHeader_justEnh_Ahituv_MRPA_lib.csv"
-data_dir = "Data/atac_seq_data.csv"
+data_dir = "Data/atac_seq_data_trimed.csv"
 
 pl.seed_everything(42)
 
 wandb_logger = WandbLogger(
     project='BCLab-WGAN',
-    name=time.strftime('%m-%d-%H-%M') + f'_{GEN_LR}_{CRITIC_LR}_cosine_both',
+    name=time.strftime('%m-%d-%H-%M') + f'_{GEN_LR}_{CRITIC_LR}_Improved',
     )
 
 dataset = ganDataset(data_dir)

@@ -1,7 +1,6 @@
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.strategies import DDPStrategy
 import wandb
 from models.WGAN_Model import WGAN
 import time
@@ -12,12 +11,11 @@ import selene_sdk
 
 
 SEQ_LEN = 227
-GEN_LR = 1e-4
+GEN_LR = 2e-4
 CRITIC_LR = 8e-5
 EPOCHS = 1500
 BATCH_SIZE = 256
-# data_dir = "Data/activity_summary_stats_and_metadata.txt"
-# data_dir = "Data/wHeader_justEnh_Ahituv_MRPA_lib.csv"
+
 data_dir = "Data/atac_seq_data_trimed.csv"
 
 pl.seed_everything(42, workers=True)
@@ -47,9 +45,7 @@ model = WGAN(
 trainer = pl.Trainer(
     logger=wandb_logger,
     accelerator='gpu',
-    # devices=-1,
-    devices=2,
-    strategy=DDPStrategy(find_unused_parameters=False),
+    devices=-1,
     max_epochs=EPOCHS,
     deterministic=True
 )

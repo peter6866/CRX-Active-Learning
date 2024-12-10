@@ -169,7 +169,7 @@ class WGAN(L.LightningModule):
         latent_dim = 100,
         lambda_gp = 10,
         critic_iterations = 5,
-        epochs = 1000,
+        epochs = 1500,
         eta_min=1e-6,  # Minimum learning rate
     ):
         super().__init__()
@@ -207,15 +207,17 @@ class WGAN(L.LightningModule):
         return self.generator(z)
     
     def configure_optimizers(self):
-        opt_gen = torch.optim.Adam(
+        opt_gen = torch.optim.AdamW(
             self.generator.parameters(), 
             lr=self.gen_lr, 
             betas=(0.5, 0.9),
+            weight_decay=0.01
         )
-        opt_critic = torch.optim.Adam(
+        opt_critic = torch.optim.AdamW(
             self.critic.parameters(), 
             lr=self.critic_lr, 
             betas=(0.5, 0.9),
+            weight_decay=0.01
         )
 
         scheduler_critic = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -230,15 +232,15 @@ class WGAN(L.LightningModule):
             eta_min=self.eta_min
         )
 
-        # For manual optimization, return optimizers and schedulers directly
-        return [opt_gen, opt_critic], [scheduler_gen, scheduler_critic]
-
         # scheduler_gen = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
         #     opt_gen,
         #     T_0=self.T_max,
         #     T_mult=2,
         #     eta_min=self.eta_min
         # )
+
+        return [opt_gen, opt_critic], [scheduler_gen, scheduler_critic]
+
     
     def gradient_penalty(self, real, fake):
         real = real.requires_grad_()
@@ -280,9 +282,9 @@ class WGAN(L.LightningModule):
             loss_critic = -(torch.mean(critic_real) - torch.mean(critic_fake)) + self.lambda_gp * gp
 
             # Log metrics
-            self.log("real_score", torch.mean(critic_real), prog_bar=True, sync_dist=True)
-            self.log("fake_score", torch.mean(critic_fake), prog_bar=True, sync_dist=True)
-            self.log("d_loss", loss_critic, prog_bar=True, sync_dist=True)
+            self.log("real_score", torch.mean(critic_real), prog_bar=True)
+            self.log("fake_score", torch.mean(critic_fake), prog_bar=True)
+            self.log("d_loss", loss_critic, prog_bar=True)
 
             # Optimize critic
             opt_c.zero_grad()
@@ -296,7 +298,7 @@ class WGAN(L.LightningModule):
         loss_gen = -torch.mean(gen_fake)
 
         # Log metrics
-        self.log("g_loss", loss_gen, prog_bar=True, sync_dist=True)
+        self.log("g_loss", loss_gen, prog_bar=True)
 
         # Optimize generator
         opt_g.zero_grad()

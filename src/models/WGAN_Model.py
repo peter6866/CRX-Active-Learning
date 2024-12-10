@@ -200,6 +200,8 @@ class WGAN(L.LightningModule):
             vocab_size=vocab_size, 
             res_rate=0.3
         )
+
+        self.save_hyperparameters()
         
     def forward(self, z):
         return self.generator(z)
@@ -278,9 +280,9 @@ class WGAN(L.LightningModule):
             loss_critic = -(torch.mean(critic_real) - torch.mean(critic_fake)) + self.lambda_gp * gp
 
             # Log metrics
-            self.log("real_score", torch.mean(critic_real), prog_bar=True)
-            self.log("fake_score", torch.mean(critic_fake), prog_bar=True)
-            self.log("d_loss", loss_critic, prog_bar=True)
+            self.log("real_score", torch.mean(critic_real), prog_bar=True, sync_dist=True)
+            self.log("fake_score", torch.mean(critic_fake), prog_bar=True, sync_dist=True)
+            self.log("d_loss", loss_critic, prog_bar=True, sync_dist=True)
 
             # Optimize critic
             opt_c.zero_grad()
@@ -294,7 +296,7 @@ class WGAN(L.LightningModule):
         loss_gen = -torch.mean(gen_fake)
 
         # Log metrics
-        self.log("g_loss", loss_gen, prog_bar=True)
+        self.log("g_loss", loss_gen, prog_bar=True, sync_dist=True)
 
         # Optimize generator
         opt_g.zero_grad()

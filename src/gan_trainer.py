@@ -1,6 +1,7 @@
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.strategies import DDPStrategy
 import wandb
 from models.WGAN_Model import WGAN
 import time
@@ -19,7 +20,7 @@ BATCH_SIZE = 256
 # data_dir = "Data/wHeader_justEnh_Ahituv_MRPA_lib.csv"
 data_dir = "Data/atac_seq_data_trimed.csv"
 
-pl.seed_everything(42)
+pl.seed_everything(42, workers=True)
 
 wandb_logger = WandbLogger(
     project='BCLab-WGAN',
@@ -27,7 +28,14 @@ wandb_logger = WandbLogger(
     )
 
 dataset = ganDataset(data_dir)
-dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, num_workers=4, shuffle=True)
+dataloader = DataLoader(
+    dataset, 
+    batch_size=BATCH_SIZE, 
+    num_workers=4, 
+    shuffle=True,
+    pin_memory=True,
+    persistent_workers=True
+)
 
 model = WGAN(
     seq_len=SEQ_LEN, 
@@ -39,7 +47,9 @@ model = WGAN(
 trainer = pl.Trainer(
     logger=wandb_logger,
     accelerator='gpu',
-    devices=-1,
+    # devices=-1,
+    devices=2,
+    strategy=DDPStrategy(find_unused_parameters=False),
     max_epochs=EPOCHS,
     deterministic=True
 )

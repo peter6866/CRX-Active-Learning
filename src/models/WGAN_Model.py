@@ -90,6 +90,7 @@ class Generator(nn.Module):
         self.linear = nn.Sequential(
             nn.Linear(latent_dim, seq_len * num_channels),
             nn.LayerNorm([seq_len * num_channels]),
+            # nn.ReLU()
             nn.GELU()
         )
         
@@ -100,6 +101,7 @@ class Generator(nn.Module):
         # improved output layer
         self.conv = nn.Sequential(
             nn.Conv1d(num_channels, num_channels, 1),
+            # nn.ReLU(),
             nn.GELU(),
             nn.Conv1d(num_channels, vocab_size, 1)
         )
@@ -207,39 +209,38 @@ class WGAN(L.LightningModule):
         return self.generator(z)
     
     def configure_optimizers(self):
-        opt_gen = torch.optim.AdamW(
+        opt_gen = torch.optim.Adam(
             self.generator.parameters(), 
             lr=self.gen_lr, 
             betas=(0.5, 0.9),
-            weight_decay=0.01
         )
-        opt_critic = torch.optim.AdamW(
+        opt_critic = torch.optim.Adam(
             self.critic.parameters(), 
             lr=self.critic_lr, 
             betas=(0.5, 0.9),
-            weight_decay=0.01
         )
 
-        scheduler_critic = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer=opt_critic,  # Explicitly attach optimizer
-            T_max=self.epochs,
-            eta_min=self.eta_min
-        )
+        # scheduler_critic = torch.optim.lr_scheduler.CosineAnnealingLR(
+        #     optimizer=opt_critic,  # Explicitly attach optimizer
+        #     T_max=self.epochs,
+        #     eta_min=self.eta_min
+        # )
 
-        scheduler_gen = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer=opt_gen,  # Explicitly attach optimizer
-            T_max=self.T_max,
-            eta_min=self.eta_min
-        )
+        # scheduler_gen = torch.optim.lr_scheduler.CosineAnnealingLR(
+        #     optimizer=opt_gen,  # Explicitly attach optimizer
+        #     T_max=self.T_max,
+        #     eta_min=self.eta_min
+        # )
 
         # scheduler_gen = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
         #     opt_gen,
-        #     T_0=self.T_max,
+        #     T_0=200,
         #     T_mult=2,
         #     eta_min=self.eta_min
         # )
 
-        return [opt_gen, opt_critic], [scheduler_gen, scheduler_critic]
+        # return [opt_gen, opt_critic], [scheduler_gen, scheduler_critic]
+        return [opt_gen, opt_critic]
 
     
     def gradient_penalty(self, real, fake):
@@ -270,7 +271,7 @@ class WGAN(L.LightningModule):
         cur_batch_size = real.shape[0]
         
         opt_g, opt_c = self.optimizers()
-        scheduler_g, scheduler_c = self.lr_schedulers()
+        # scheduler_g, scheduler_c = self.lr_schedulers()
         
         # Train Critic: max E[critic(real)] - E[critic(fake)]
         for _ in range(self.critic_iterations):
@@ -305,7 +306,7 @@ class WGAN(L.LightningModule):
         self.manual_backward(loss_gen)
         opt_g.step()
 
-        if self.trainer.is_last_batch:
-            scheduler_g.step()
-            scheduler_c.step()
+        # if self.trainer.is_last_batch:
+        #     scheduler_g.step()
+        #     scheduler_c.step()
     

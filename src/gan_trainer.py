@@ -11,7 +11,7 @@ import selene_sdk
 
 
 SEQ_LEN = 227
-GEN_LR = 2e-4
+GEN_LR = 1e-4
 CRITIC_LR = 8e-5
 EPOCHS = 1500
 BATCH_SIZE = 256
@@ -22,7 +22,7 @@ pl.seed_everything(42, workers=True)
 
 wandb_logger = WandbLogger(
     project='BCLab-WGAN',
-    name=time.strftime('%m-%d-%H-%M') + f'_{GEN_LR}_{CRITIC_LR}_Improved',
+    name=time.strftime('%m-%d-%H-%M') + f'_{GEN_LR}',
     )
 
 dataset = ganDataset(data_dir)

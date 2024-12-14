@@ -82,26 +82,19 @@ class Generator(nn.Module):
         super().__init__()
         self.seq_len = seq_len
         self.num_channels = num_channels
-        
-        # Linear layer to transform the latent vector
-        # self.linear = nn.Linear(latent_dim, seq_len * num_channels)
 
         # Improved latent processing
         self.linear = nn.Sequential(
             nn.Linear(latent_dim, seq_len * num_channels),
             nn.LayerNorm([seq_len * num_channels]),
-            # nn.ReLU()
             nn.GELU()
         )
         
         self.res_blocks = nn.ModuleList([ResBlock(num_channels, res_rate) for _ in range(res_layers)])
-        
-        # self.conv = nn.Conv1d(num_channels, vocab_size, kernel_size=1, stride=1, padding='same')
 
         # improved output layer
         self.conv = nn.Sequential(
             nn.Conv1d(num_channels, num_channels, 1),
-            # nn.ReLU(),
             nn.GELU(),
             nn.Conv1d(num_channels, vocab_size, 1)
         )
@@ -172,7 +165,7 @@ class WGAN(L.LightningModule):
         lambda_gp = 10,
         critic_iterations = 5,
         epochs = 1500,
-        eta_min=1e-6,  # Minimum learning rate
+        eta_min=1e-5,  # Minimum learning rate
     ):
         super().__init__()
         self.automatic_optimization = False
@@ -184,7 +177,6 @@ class WGAN(L.LightningModule):
         self.vocab_size = vocab_size
         self.seq_len = seq_len
         self.epochs = epochs
-        self.T_max = epochs // 4
         self.eta_min = eta_min
         
         # Initialize networks
@@ -220,27 +212,14 @@ class WGAN(L.LightningModule):
             betas=(0.5, 0.9),
         )
 
-        # scheduler_critic = torch.optim.lr_scheduler.CosineAnnealingLR(
-        #     optimizer=opt_critic,  # Explicitly attach optimizer
-        #     T_max=self.epochs,
-        #     eta_min=self.eta_min
-        # )
+        scheduler_gen = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+            opt_gen,
+            T_0=50,
+            T_mult=2,
+            eta_min=self.eta_min
+        )
 
-        # scheduler_gen = torch.optim.lr_scheduler.CosineAnnealingLR(
-        #     optimizer=opt_gen,  # Explicitly attach optimizer
-        #     T_max=self.T_max,
-        #     eta_min=self.eta_min
-        # )
-
-        # scheduler_gen = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-        #     opt_gen,
-        #     T_0=200,
-        #     T_mult=2,
-        #     eta_min=self.eta_min
-        # )
-
-        # return [opt_gen, opt_critic], [scheduler_gen, scheduler_critic]
-        return [opt_gen, opt_critic]
+        return [opt_gen, opt_critic], [scheduler_gen]
 
     
     def gradient_penalty(self, real, fake):
@@ -271,7 +250,7 @@ class WGAN(L.LightningModule):
         cur_batch_size = real.shape[0]
         
         opt_g, opt_c = self.optimizers()
-        # scheduler_g, scheduler_c = self.lr_schedulers()
+        scheduler_g = self.lr_schedulers()
         
         # Train Critic: max E[critic(real)] - E[critic(fake)]
         for _ in range(self.critic_iterations):
@@ -306,7 +285,7 @@ class WGAN(L.LightningModule):
         self.manual_backward(loss_gen)
         opt_g.step()
 
-        # if self.trainer.is_last_batch:
-        #     scheduler_g.step()
-        #     scheduler_c.step()
+        # Update learning rate
+        if self.trainer.is_last_batch:
+            scheduler_g.step()
     

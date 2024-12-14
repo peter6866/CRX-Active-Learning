@@ -22,7 +22,7 @@ pl.seed_everything(42, workers=True)
 
 wandb_logger = WandbLogger(
     project='BCLab-WGAN',
-    name=time.strftime('%m-%d-%H-%M') + f'_{GEN_LR}',
+    name=time.strftime('%m-%d-%H-%M') + f'_{GEN_LR}_no_s_all_gelu',
     )
 
 dataset = ganDataset(data_dir)

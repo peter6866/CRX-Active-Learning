@@ -6,7 +6,7 @@ import os
 import pandas as pd
 
 SEQ_LEN = 227
-CKPT_DIR = "/scratch/bclab/jiayu/CRX-Active-Learning/BCLab-WGAN/doxfqs49/checkpoints/improved.ckpt"
+CKPT_DIR = "/scratch/bclab/jiayu/CRX-Active-Learning/ModelFitting/GAN/new_best.ckpt"
 SAVE_DIR = "ModelFitting/GAN"
 
 model = WGAN.load_from_checkpoint(
@@ -18,14 +18,13 @@ model.eval()
 
 # Generate sequences in batches
 batch_size = 100
+# num_sequences = 67154
 num_sequences = 1000000
 generated_seqs = []
 
 # Handle full batches
 num_full_batches = num_sequences // batch_size
 remainder = num_sequences % batch_size
-
-print("Generating sequences in batches...")
 
 # Process full batches
 for i in range(num_full_batches):
@@ -52,6 +51,6 @@ if remainder > 0:
         generated_seqs.append(dna_sequence)
 
 df = pd.DataFrame(generated_seqs)
-df.to_csv(os.path.join(SAVE_DIR, "atac_gen_1m.csv"), index=False, header=False)
+df.to_csv(os.path.join(SAVE_DIR, "atac_gen_new_1m.csv"), index=False, header=False)
 
 print("Done!")
